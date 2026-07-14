@@ -51,7 +51,6 @@ import android.view.ViewParent;
 import br.com.carlosrafaelgn.fplay.list.AlbumArtFetcher;
 import br.com.carlosrafaelgn.fplay.list.BaseList;
 import br.com.carlosrafaelgn.fplay.list.Song;
-import br.com.carlosrafaelgn.fplay.list.SongList;
 import br.com.carlosrafaelgn.fplay.ui.drawable.CoverDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.ColorUtils;
@@ -61,38 +60,23 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	private Song song;
 	private String ellipsizedTitle, ellipsizedArtist3, ellipsizedExtraInfo, numberAndCount;
 	private int state, width, lengthX, lengthWidth, numberAndCountX, numberAndCountWidth, position, requestId, bitmapLeftPadding;
-	private SongList baseList;
+	private BaseList<Song> baseList;
 	private Handler handler;
 	private ReleasableBitmapWrapper albumArt;
 	private boolean pendingAlbumArtRequest;
 
-	private static int albumArtHeight, height, textX, titleY, lengthY, artistY,  extraY, currentX, currentY, leftMargin, topMargin,
-		rightMargin, rightMarginForDrawing, numberAndCountColor, numberAndCountColorSelected, numberAndCountColorFocused,// iconLeftPadding,
-		titlesp;
+	private int textX, currentX, leftMargin, rightMargin, rightMarginForDrawing;
+
+	private static int albumArtHeight, height, titleY, lengthY, artistY, extraY, currentY, topMargin,
+		numberAndCountColor, numberAndCountColorSelected, numberAndCountColorFocused, titlesp;
 
 	public static int getViewHeight() {
 		final int bottomMargin;
 		if (UI.is3D) {
-			if (UI.songListScrollBarType == BgListView.SCROLLBAR_LARGE) {
-				if (UI.scrollBarToTheLeft) {
-					leftMargin = 0;
-					rightMarginForDrawing = UI.controlSmallMargin;
-				} else {
-					leftMargin = UI.controlSmallMargin;
-					rightMarginForDrawing = 0;
-				}
-			} else {
-				leftMargin = UI.controlSmallMargin;
-				rightMarginForDrawing = UI.controlSmallMargin;
-			}
 			topMargin = UI.controlSmallMargin;
-			rightMargin = rightMarginForDrawing + UI.strokeSize;
 			bottomMargin = UI.strokeSize;
 		} else {
-			leftMargin = 0;
 			topMargin = 0;
-			rightMargin = 0;
-			rightMarginForDrawing = 0;
 			bottomMargin = 0;
 		}
 		final int titlespBox, titlespYinBox;
@@ -107,7 +91,6 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		}
 		albumArtHeight = (UI._1dp << 1) + (UI.verticalMargin << 1) + titlespBox + UI._14spBox + ((Song.extraInfoMode == Song.EXTRA_TRACK_ARTIST_ALBUM) ? (UI._14spBox >> 2) : 0);
 		height = albumArtHeight + topMargin + bottomMargin;
-		textX = leftMargin + UI.controlMargin + (UI.albumArtSongList ? (height - ((Song.extraInfoMode == Song.EXTRA_TRACK_ARTIST_ALBUM) ? (UI._4dp >> 1) : 0)) : 0);
 		titleY = UI.verticalMargin + titlespYinBox + topMargin;
 		lengthY = UI.verticalMargin + UI._14spYinBox + topMargin;
 		extraY = UI.verticalMargin + UI._1dp + titlespBox + UI._14spYinBox + topMargin;
@@ -149,6 +132,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
 			setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
 		getViewHeight();
+		computeHorizontalCoords();
 		numberAndCountColor = ColorUtils.blend(UI.color_text_listitem, UI.color_list, 0.5f);
 		numberAndCountColorSelected = ColorUtils.blend(UI.color_text_selected, UI.color_selected, 0.5f);
 		numberAndCountColorFocused = ColorUtils.blend(UI.color_text_selected, UI.color_focused, 0.5f);
@@ -157,6 +141,32 @@ public final class SongView extends View implements View.OnClickListener, View.O
 			super.setDefaultFocusHighlightEnabled(false);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
 			super.setPointerIcon(PointerIcon.getSystemIcon(getContext(), PointerIcon.TYPE_HAND));
+	}
+
+	private void computeHorizontalCoords() {
+		if (UI.is3D) {
+			if (UI.songListScrollBarType == BgListView.SCROLLBAR_LARGE) {
+				if (UI.scrollBarToTheLeft) {
+					leftMargin = 0;
+					rightMarginForDrawing = UI.controlSmallMargin;
+				} else {
+					leftMargin = UI.controlSmallMargin;
+					rightMarginForDrawing = 0;
+				}
+			} else {
+				leftMargin = UI.controlSmallMargin;
+				rightMarginForDrawing = UI.controlSmallMargin;
+			}
+			rightMargin = rightMarginForDrawing + UI.strokeSize;
+		} else {
+			leftMargin = 0;
+			rightMargin = 0;
+			rightMarginForDrawing = 0;
+		}
+
+		textX = leftMargin + UI.controlMargin + (UI.albumArtSongList ? (height - ((Song.extraInfoMode == Song.EXTRA_TRACK_ARTIST_ALBUM) ? (UI._4dp >> 1) : 0)) : 0);
+
+		//iconLeftPadding = leftMargin + ((albumArtHeight - UI.defaultControlContentsSize) >> 1);
 	}
 
 	private void processEllipsis() {
@@ -187,7 +197,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	//	event.setContentDescription(getContentDescription());
 	//}
 
-	public void setItemState(Song song, int position, int state, SongList baseList) {
+	public void setItemState(Song song, int position, int state, BaseList<Song> baseList, AlbumArtFetcher albumArtFetcher) {
 		this.state = state; //(this.state & ~(UI.STATE_CURRENT | UI.STATE_SELECTED | UI.STATE_MULTISELECTED)) | state;
 		this.position = position;
 		this.baseList = baseList;
@@ -196,8 +206,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 			this.song = song;
 			if (UI.isAccessibilityManagerEnabled)
 				setContentDescription(song.title);
-			final AlbumArtFetcher albumArtFetcher;
-			if (UI.albumArtSongList && (albumArtFetcher = baseList.albumArtFetcher) != null) {
+			if (UI.albumArtSongList && albumArtFetcher != null) {
 				if (pendingAlbumArtRequest) {
 					//just to invalidate a possible response from albumArtFetcher
 					pendingAlbumArtRequest = false;

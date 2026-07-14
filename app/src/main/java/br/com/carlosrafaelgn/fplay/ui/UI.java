@@ -112,7 +112,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	//VERSION_CODE must be kept in sync with build.gradle
 	public static final int VERSION_CODE = 3000138;
 	//VERSION_NAME must be kept in sync with build.gradle
-	public static final String VERSION_NAME = "v1.992";
+	public static final String VERSION_NAME = "v1.993";
 
 	public static final int STATE_PRESSED = 1;
 	public static final int STATE_FOCUSED = 2;
@@ -663,7 +663,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		}
 	}
 
-	public static String collonNoSpace() {
+	public static String collonNoSpaceAtTheEnd() {
 		switch (currentLocale) {
 		case LOCALE_FR:
 			return " :";
@@ -671,6 +671,17 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			return "：";
 		default:
 			return ":";
+		}
+	}
+
+	public static String comma() {
+		switch (currentLocale) {
+		case LOCALE_FR:
+			return " , ";
+		case LOCALE_ZH:
+			return "、";
+		default:
+			return ", ";
 		}
 	}
 
@@ -1545,7 +1556,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			color_control_mode = 0xff000000;
 			color_visualizer = 0xff000000;
 			color_list = 0xff1c1c1c;
-			color_menu = 0xff303030;
+			color_menu = 0xff1c1c1c;
 			color_menu_icon = 0xffff9900;
 			color_menu_border = 0xff0066ff;
 			color_divider = 0xff525252;
@@ -1657,7 +1668,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		isRGB = rgb;
 		if (rgb) {
 			final BitmapFactory.Options options = new BitmapFactory.Options();
-			options.inMutable = false;
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+				options.inMutable = false;
 			options.inScaled = false;
 
 			if (rgbBitmap == null) {
@@ -1780,10 +1792,10 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		final String content = //"- " + context.getText(R.string.ringtone) +
 			//"\n\n" +
 			context.getText(R.string.there_are_new_features) +
-			"\n\n- " + context.getText(R.string.hdr_display) + punctuationSpace(": ") + "RGB" +
-			"\n\n- " + context.getText(R.string.hdr_display) + punctuationSpace(": ") + context.getText(R.string.night_mode) +
-			"\n\n- " + context.getText(R.string.hdr_display) + punctuationSpace(": ") + context.getText(R.string.album_art) +
-			//"\n\n- " + context.getText(R.string.hdr_display) + punctuationSpace(": ") + context.getText(R.string.place_controls_at_the_bottom) +
+			"\n\n- " + context.getText(R.string.hdr_display) + collon() + "RGB" +
+			"\n\n- " + context.getText(R.string.hdr_display) + collon() + context.getText(R.string.night_mode) +
+			"\n\n- " + context.getText(R.string.hdr_display) + collon() + context.getText(R.string.album_art) +
+			//"\n\n- " + context.getText(R.string.hdr_display) + collon() + context.getText(R.string.place_controls_at_the_bottom) +
 			"\n\n" +
 			context.getText(R.string.check_it_out).toString();
 		final BgDialog dialog = new BgDialog(context, createDialogView(context, content), null);

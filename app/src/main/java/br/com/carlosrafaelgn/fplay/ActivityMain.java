@@ -35,6 +35,7 @@ package br.com.carlosrafaelgn.fplay;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -46,10 +47,12 @@ import android.net.Uri;
 import android.os.Build;
 import android.provider.MediaStore;
 import android.provider.Settings;
+import android.text.Editable;
 import android.text.InputType;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils.TruncateAt;
+import android.text.TextWatcher;
 import android.text.method.LinkMovementMethod;
 import android.text.style.DynamicDrawableSpan;
 import android.text.style.ImageSpan;
@@ -62,6 +65,7 @@ import android.view.PointerIcon;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.AdapterView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -71,7 +75,9 @@ import java.util.Locale;
 import br.com.carlosrafaelgn.fplay.activity.ActivityVisualizer;
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
+import br.com.carlosrafaelgn.fplay.list.BaseList;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
+import br.com.carlosrafaelgn.fplay.list.SimpleSongList;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.list.SongList;
 import br.com.carlosrafaelgn.fplay.playback.ExternalFx;
@@ -89,7 +95,9 @@ import br.com.carlosrafaelgn.fplay.ui.drawable.BorderDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.ColorDrawable;
 import br.com.carlosrafaelgn.fplay.ui.drawable.TextIconDrawable;
 import br.com.carlosrafaelgn.fplay.util.SafeURLSpan;
+import br.com.carlosrafaelgn.fplay.util.TextNormalizer;
 import br.com.carlosrafaelgn.fplay.util.Timer;
+import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 import br.com.carlosrafaelgn.fplay.visualizer.AlbumArtVisualizer;
 import br.com.carlosrafaelgn.fplay.visualizer.OpenGLVisualizerJni;
 import br.com.carlosrafaelgn.fplay.visualizer.SimpleVisualizerJni;
@@ -116,11 +124,11 @@ import br.com.carlosrafaelgn.fplay.visualizer.SimpleVisualizerJni;
 //Maintain/Save/Restore scroll position when returning to a ListView
 //http://stackoverflow.com/questions/3014089/maintain-save-restore-scroll-position-when-returning-to-a-listview
 //
-public final class ActivityMain extends ClientActivity implements Timer.TimerHandler, Player.PlayerObserver, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, SongList.ItemClickListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener, BgButton.OnPressingChangeListener, UI.AnimationPreShowViewHandler, DialogInterface.OnDismissListener {
+public final class ActivityMain extends ClientActivity implements Timer.TimerHandler, Player.PlayerObserver, View.OnClickListener, BgSeekBar.OnBgSeekBarChangeListener, SongList.ItemClickListener, BgListView.OnAttachedObserver, BgListView.OnBgListViewKeyDownObserver, ActivityFileSelection.OnFileSelectionListener, BgButton.OnPressingChangeListener, UI.AnimationPreShowViewHandler, DialogInterface.OnClickListener, DialogInterface.OnDismissListener, TextWatcher {
 	private static final int MAX_SEEK = 10000, MNU_ADDSONGS = 100, MNU_CLEARLIST = 101, MNU_LOADLIST = 102, MNU_SAVELIST = 103, MNU_TOGGLECONTROLMODE = 104, MNU_RANDOMMODE = 105, MNU_EFFECTS = 106,
 		MNU_VISUALIZER = 107, MNU_SETTINGS = 108, MNU_EXIT = 109, MNU_SORT_BY_TITLE = 110, MNU_SORT_BY_ARTIST = 111, MNU_SORT_BY_ALBUM = 112, MNU_VISUALIZER_SPECTRUM = 113, MNU_REPEAT = 114, MNU_REPEAT_ONE = 115,
 		MNU_VISUALIZER_BLUETOOTH = 116, MNU_VISUALIZER_LIQUID = 117, MNU_VISUALIZER_SPIN = 118, MNU_VISUALIZER_PARTICLE = 119, MNU_VISUALIZER_IMMERSIVE_PARTICLE = 120, MNU_VISUALIZER_ALBUMART = 121, MNU_REPEAT_NONE = 122,
-		MNU_VISUALIZER_IMMERSIVE_PARTICLE_VR = 123, MNU_VISUALIZER_SPECTRUM2 = 124, MNU_VISUALIZER_LIQUID_POWER_SAVER = 125, MNU_HTTP_TRANSMITTER = 126, MNU_VISUALIZER_COLOR_WAVES = 127;
+		MNU_VISUALIZER_IMMERSIVE_PARTICLE_VR = 123, MNU_VISUALIZER_SPECTRUM2 = 124, MNU_VISUALIZER_LIQUID_POWER_SAVER = 125, MNU_HTTP_TRANSMITTER = 126, MNU_VISUALIZER_COLOR_WAVES = 127, MNU_SEARCH = 128;
 	private static final int REQUEST_WRITE_SETTINGS = 123;
 	private static final int VOLUME_UPDATE_COUNT = 4;
 	private View vwVolume;
@@ -129,7 +137,10 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 	private BgSeekBar barSeek, barVolume;
 	private ViewGroup panelControls, panelSecondary, panelSelection;
 	private BgButton btnAdd, btnPrev, btnPlay, btnNext, btnMenu, btnMoreInfo, btnMoveSel, btnRemoveSel, btnCancelSel, btnDecreaseVolume, btnIncreaseVolume, btnVolume, btnSetRingtone, btnShare;
-	private BgListView list;
+	private BgListView list, searchList;
+	private SimpleSongList searchSongList;
+	private BgEditText searchText;
+	private TypedRawArrayList<Song> searchResults;
 	private Timer tmrSong, tmrUpdateVolumeDisplay, tmrVolume, tmrMoreInfo;
 	private int firstSel, lastSel, lastTime, volumeButtonPressed, tmrVolumeInitialDelay, vwVolumeId, pendingListCommand, idForRingtoneContent, volumeUpdateCount;
 	private boolean skipToDestruction, forceFadeOut, isCreatingLayout, volumeAlreadyUpdatedAfterSinkChange;//, ignoreAnnouncement;
@@ -600,14 +611,82 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			}
 		}
 	}
-	
+
 	private void addSongs(View sourceView) {
 		if (Player.state == Player.STATE_ALIVE) {
 			Player.alreadySelected = false;
 			startActivity(new ActivityBrowser2(), 0, sourceView, sourceView != null);
 		}
 	}
-	
+
+	private void search() {
+		final Context ctx = getHostActivity();
+		final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
+		l.setMinimumWidth(Math.min(UI.dpToPxI(300), (90 * Math.min(UI.usableScreenWidth, UI.usableScreenHeight)) / 100));
+		l.setPadding(0, UI.dialogMargin, 0, 0);
+
+		searchSongList = new SimpleSongList();
+		searchSongList.albumArtFetcher = Player.songs.albumArtFetcher;
+		searchSongList.setItemClickListener(new BaseList.ItemClickListener() {
+			@Override
+			public void onItemClicked(int position) {
+				searchItemClicked(position);
+			}
+
+			@Override
+			public void onItemLongClicked(int position) {
+			}
+
+			@Override
+			public void onItemCheckboxClicked(int position) {
+			}
+		});
+
+		final String label = ctx.getText(R.string.title) +
+			UI.comma() +
+			(ctx.getText(R.string.artist) +
+			UI.comma() +
+			ctx.getText(R.string.album) +
+			UI.comma() +
+			ctx.getText(R.string.track)).toLowerCase();
+		searchText = UI.createDialogEditText(ctx, 0, "", label, InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+		searchText.addTextChangedListener(this);
+		final LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+		layoutParams.leftMargin = UI.dialogMargin;
+		layoutParams.rightMargin = UI.dialogMargin;
+		layoutParams.bottomMargin = UI.controlSmallMargin;
+		l.addView(searchText, layoutParams);
+
+		searchList = new BgListView(ctx);
+		searchList.setScrollBarType(UI.songListScrollBarType);
+		searchList.setCustomEmptyTextSmall(getText(R.string.no_songs_found));
+		searchList.setAdapter(searchSongList);
+		searchList.setMinimumHeight(UI.defaultControlSize << 1);
+		searchList.setOnKeyDownObserver(this);
+		l.addView(searchList, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
+
+		searchText.requestFocus();
+
+		searchResults = new TypedRawArrayList<>(Song.class);
+		Player.songs.prepareNormalizedMetadata();
+
+		final BgDialog dialog = new BgDialog(getHostActivity(), l, this);
+		dialog.setOnDismissListener(this);
+		dialog.setTitle(R.string.search);
+		dialog.show();
+	}
+
+	private void searchItemClicked(int position) {
+		if (position >= 0) {
+			final Song song = searchSongList.getItem(position);
+			if (song != null) {
+				final int i = Player.songs.indexOf(song);
+				if (i >= 0)
+					Player.play(i);
+			}
+		}
+	}
+
 	private boolean decreaseVolume() {
 		final int volume = Player.decreaseVolume();
 		if (volume != Integer.MIN_VALUE) {
@@ -796,7 +875,12 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		menu.add(0, MNU_ADDSONGS, 0, R.string.add_songs)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_FPLAY24));
-		UI.separator(menu, 0, 1);
+		if (!UI.isLandscape || UI.isLargeScreen) {
+			menu.add(0, MNU_SEARCH, 1, R.string.search)
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(UI.ICON_SEARCH));
+		}
+		UI.separator(menu, 0, 2);
 		Menu s2, s = menu.addSubMenu(1, 0, 0, R.string.list)
 				.setIcon(new TextIconDrawable(UI.ICON_LIST24));
 		UI.prepare(s);
@@ -833,6 +917,11 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			s = menu.addSubMenu(2, 0, 1, R.string.more)
 					.setIcon(new TextIconDrawable(UI.ICON_MENU_MORE));
 			UI.prepare(s);
+
+			s.add(0, MNU_SEARCH, 0, R.string.search)
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(UI.ICON_SEARCH));
+			UI.separator(s, 0, 1);
 		} else {
 			s = menu;
 		}
@@ -1037,6 +1126,9 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		switch (id) {
 		case MNU_ADDSONGS:
 			addSongs(null);
+			break;
+		case MNU_SEARCH:
+			search();
 			break;
 		case MNU_CLEARLIST:
 			Player.songs.clear();
@@ -1649,6 +1741,23 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 	public boolean onBgListViewKeyDown(BgListView list, int keyCode) {
 		if (!isLayoutCreated())
 			return true;
+
+		if (list == searchList) {
+			if (searchSongList != null) {
+				switch (keyCode) {
+				case UI.KEY_LEFT:
+				case UI.KEY_RIGHT:
+					if (searchText != null)
+						searchText.requestFocus();
+					return true;
+				case UI.KEY_ENTER:
+					searchItemClicked(searchSongList.getSelection());
+					return true;
+				}
+			}
+			return false;
+		}
+
 		switch (keyCode) {
 		case UI.KEY_LEFT:
 			if (btnCancelSel != null && btnMoreInfo != null && btnMoveSel != null && btnRemoveSel != null && btnMenu != null && vwVolume != null) {
@@ -2083,10 +2192,65 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 	}
 
 	@Override
+	public void onClick(DialogInterface dialog, int which) {
+	}
+
+	@Override
 	public void onDismiss(DialogInterface dialog) {
 		if (tmrMoreInfo != null) {
 			tmrMoreInfo.release();
 			tmrMoreInfo = null;
+		}
+
+		if (searchList != null) {
+			searchList.setOnKeyDownObserver(null);
+			searchList.setAdapter(null);
+			searchSongList.albumArtFetcher = null;
+			searchSongList.setItemClickListener(null);
+			searchSongList.clear();
+			searchText.removeTextChangedListener(this);
+			searchResults.clear();
+			searchList = null;
+			searchSongList = null;
+			searchText = null;
+			searchResults = null;
+			Player.songs.invalidateNormalizedMetadata();
+		}
+	}
+
+	@Override
+	public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+	}
+
+	@Override
+	public void onTextChanged(CharSequence s, int start, int before, int count) {
+	}
+
+	@Override
+	public void afterTextChanged(Editable s) {
+		if (searchList == null)
+			return;
+
+		searchSongList.clear();
+
+		final String searchTerms = TextNormalizer.normalizeAccent(s.toString().trim());
+		if (searchTerms.length() == 0)
+			return;
+
+		final String[] normalizedTerms = TextNormalizer.splitWhitespace(searchTerms);
+
+		final int total = Player.songs.getCount();
+		if (normalizedTerms.length > 0 && total > 0) {
+			searchResults.clear();
+
+			for (int i = 0; i < total; i++) {
+				final Song song = Player.songs.getItem(i);
+				if (song.normalizedMetadataContainsNormalizedTerms(normalizedTerms))
+					searchResults.add(song);
+			}
+
+			if (!searchResults.isEmpty())
+				searchSongList.add(-1, searchResults.getRawArray(), 0, searchResults.size());
 		}
 	}
 }

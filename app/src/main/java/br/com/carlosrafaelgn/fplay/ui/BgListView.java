@@ -81,9 +81,9 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 	private OnScrollListener scrollListener;
 	private StaticLayout emptyLayout;
 	private BaseList<? extends BaseItem> adapter;
-	private boolean notified, attached, measured, sized, ignoreTouchMode, ignorePadding, tracking, touching;
+	private boolean notified, attached, measured, sized, ignoreTouchMode, ignorePadding, tracking, touching, emptyLayoutSmall;
 	private int backgroundColor, leftPadding, topPadding, rightPadding, bottomPadding, scrollBarType, scrollBarWidth, scrollBarThumbTop, scrollBarThumbHeight,
-		scrollBarTop, scrollBarLeft, scrollBarBottom, viewWidth, viewHeight, contentsHeight, itemHeight, itemCount, scrollBarThumbOffset, scrollState, dividerHeight;
+		scrollBarTop, scrollBarLeft, scrollBarBottom, viewWidth, viewHeight, contentsHeight, itemHeight, itemCount, scrollBarThumbOffset, scrollState, dividerHeight, minimumHeight;
 	private String[] sections;
 	private int[] sectionPositions;
 	public boolean skipUpDownTranslation;
@@ -384,11 +384,17 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		if (text == null) {
 			emptyLayout = null;
 		} else {
-			UI.textPaint.setTextSize(UI._Headingsp);
-			emptyLayout = new StaticLayout(text, UI.textPaint, (viewWidth < (UI.controlLargeMargin << 1)) ? 0 : (viewWidth - (UI.controlLargeMargin << 1)), Alignment.ALIGN_CENTER, 1.0f, 0.0f, false);
+			UI.textPaint.setTextSize(emptyLayoutSmall ? UI._18sp : UI._Headingsp);
+			final int margin = (emptyLayoutSmall ? UI.controlMargin : UI.controlLargeMargin) << 1;
+			emptyLayout = new StaticLayout(text, UI.textPaint, (viewWidth < margin) ? viewWidth : (viewWidth - margin), Alignment.ALIGN_CENTER, 1.0f, 0.0f, false);
 		}
 	}
-	
+
+	public void setCustomEmptyTextSmall(CharSequence text) {
+		emptyLayoutSmall = true;
+		setCustomEmptyText(text);
+	}
+
 	@Override
 	protected void onAttachedToWindow() {
 		ignorePadding = true;
@@ -401,10 +407,21 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 		}
 		ignorePadding = false;
 	}
-	
+
+	@Override
+	public void setMinimumHeight(int minHeight) {
+		super.setMinimumHeight(minHeight);
+		minimumHeight = minHeight;
+	}
+
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
+		// ListView ignores the minimum height inside its onMeasure() implementation
+		if (minimumHeight > 0 && getMeasuredHeight() < minimumHeight)
+			setMeasuredDimension(getMeasuredWidth(), minimumHeight);
+
 		measured = true;
 		if (!notified && attached && sized && attachedObserver != null) {
 			notified = true;
@@ -985,7 +1002,7 @@ public final class BgListView extends ListView implements ListView.OnScrollListe
 				final float y = (float)((viewHeight - emptyLayout.getHeight()) >> 1);
 				canvas.translate(x, y);
 				UI.textPaint.setColor(UI.color_text_listitem_disabled);
-				UI.textPaint.setTextSize(UI._Headingsp);
+				UI.textPaint.setTextSize(emptyLayoutSmall ? UI._18sp : UI._Headingsp);
 				emptyLayout.draw(canvas);
 				canvas.translate(-x, -y);
 			}

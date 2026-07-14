@@ -19,6 +19,7 @@
 	<string name="loading">正在加载&#8230;</string>
 	<string name="adding_songs">正在添加歌曲&#8230;</string>
 	<string name="empty_list">空列表！</string>
+    <string name="no_songs_found">未找到歌曲！</string>
 	<string name="error">错误：</string>
 	<string name="ok">好的</string>
 	<string name="cancel">取消</string>

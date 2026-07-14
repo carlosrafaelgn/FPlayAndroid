@@ -25,6 +25,7 @@
     <string name="loading">Loading&#8230;</string>
     <string name="adding_songs">Adding songs&#8230;</string>
     <string name="empty_list">Empty list!</string>
+    <string name="no_songs_found">No songs found!</string>
     <string name="error">Error:</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
@@ -76,7 +77,7 @@
     <string name="opt_fade_in_focus">Volume fade in\'s duration after a call, or another external interruption:</string>
     <string name="opt_fade_in_pause">Volume fade in\'s duration when unpausing:</string>
     <string name="opt_fade_in_other">Volume fade in\'s duration when starting new songs after silence:</string>
-    <string name="hdr_display">Appearance and Display</string>
+    <string name="hdr_display">Appearance and display</string>
     <string name="hdr_playback">Playback</string>
     <string name="hdr_behavior">Behavior</string>
     <string name="volume_control_type_integrated">Integrated with the system</string>
@@ -248,7 +249,7 @@
     <string name="sort_by_artist">Sort by artist</string>
     <string name="sort_by_album">Sort by album</string>
     <string name="secondary_line_of_text">Secondary line of text:</string>
-    <string name="scrollbar">Scroll Bar</string>
+    <string name="scrollbar">Scroll bar</string>
     <string name="scrollbar_to_the_left">Place scroll bars to the left side</string>
     <string name="scrollbar_playlist">Type of scroll bar to show in the playlist:</string>
     <string name="scrollbar_browser_type">Type of scroll bar to show when adding songs:</string>

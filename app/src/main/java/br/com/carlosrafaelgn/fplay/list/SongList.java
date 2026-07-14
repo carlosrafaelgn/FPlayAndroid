@@ -78,7 +78,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 	public static final int REPEAT_ONE = 1;
 	public static final int REPEAT_NONE = 2;
 
-	private static final int MAX_COUNT = 65536;
+	public static final int MAX_COUNT = 65536;
 
 	private static final int MSG_ADD_SONGS = 0x0700;
 	private static final int MSG_FINISHED_ADDING = 0x0701;
@@ -976,7 +976,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		final SongView view = ((convertView != null) ? (SongView)convertView : new SongView(Player.theApplication));
-		view.setItemState(items[position], position, getItemState(position), this);
+		view.setItemState(items[position], position, getItemState(position), this, albumArtFetcher);
 		return view;
 	}
 
@@ -999,5 +999,16 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 			albumArtFetcher.stopAndCleanup();
 			albumArtFetcher = null;
 		}
+	}
+
+	public void prepareNormalizedMetadata() {
+		final StringBuilder stringBuilder = new StringBuilder();
+		for (int i = count - 1; i >= 0; i--)
+			items[i].prepareNormalizedMetadata(stringBuilder);
+	}
+
+	public void invalidateNormalizedMetadata() {
+		for (int i = count - 1; i >= 0; i--)
+			items[i].invalidateNormalizedMetadata();
 	}
 }

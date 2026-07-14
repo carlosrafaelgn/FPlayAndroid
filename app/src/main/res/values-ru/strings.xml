@@ -12,6 +12,7 @@
     <string name="loading">Загрузка&#8230;</string>
     <string name="adding_songs">Добавление композиций&#8230;</string>
     <string name="empty_list">Список пустой!</string><!--[Пустой список]</string>-->
+    <string name="no_songs_found">Композиции не найдены!</string>
     <string name="error">Ошибка:</string>
     <string name="ok">Готово</string>
     <string name="cancel">Отмена</string>

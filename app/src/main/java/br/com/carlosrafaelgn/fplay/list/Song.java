@@ -45,6 +45,7 @@ import br.com.carlosrafaelgn.fplay.playback.MetadataExtractor;
 import br.com.carlosrafaelgn.fplay.playback.Player;
 import br.com.carlosrafaelgn.fplay.plugin.SongInfo;
 import br.com.carlosrafaelgn.fplay.util.Serializer;
+import br.com.carlosrafaelgn.fplay.util.TextNormalizer;
 
 public final class Song extends BaseItem {
 	public static final int EXTRA_ARTIST = 0;
@@ -65,6 +66,7 @@ public final class Song extends BaseItem {
 	public String length;
 	public boolean alreadyPlayed, selected, validAlbumArt;
 	public Long albumId;
+	private String normalizedMetadata;
 
 	public static boolean isPathHttp(String path) {
 		return (path.startsWith("http:") || path.startsWith("https:") || path.startsWith("icy:"));
@@ -360,7 +362,51 @@ public final class Song extends BaseItem {
 		Serializer.serializeInt(os, year);
 		Serializer.serializeInt(os, sampleRate | ((channels & 0x0f) << 20)); //flags
 	}
-	
+
+	public boolean normalizedMetadataContainsNormalizedTerms(String[] normalizedTerms) {
+		if (normalizedMetadata == null)
+			return false;
+
+		for (int i = normalizedTerms.length - 1; i >= 0; i--) {
+			if (!normalizedMetadata.contains(normalizedTerms[i]))
+				return false;
+		}
+
+		return true;
+	}
+
+	public void prepareNormalizedMetadata(StringBuilder stringBuilder) {
+		stringBuilder.delete(0, stringBuilder.length());
+
+		if (title.length() > 0) {
+			stringBuilder.append(title);
+		}
+
+		if (artist.length() > 0) {
+			if (stringBuilder.length() > 0)
+				stringBuilder.append(' ');
+			stringBuilder.append(artist);
+		}
+
+		if (album.length() > 0) {
+			if (stringBuilder.length() > 0)
+				stringBuilder.append(' ');
+			stringBuilder.append(album);
+		}
+
+		if (track > 0) {
+			if (stringBuilder.length() > 0)
+				stringBuilder.append(' ');
+			stringBuilder.append(track);
+		}
+
+		normalizedMetadata = TextNormalizer.normalizeAccent(stringBuilder.toString());
+	}
+
+	public void invalidateNormalizedMetadata() {
+		normalizedMetadata = null;
+	}
+
 	public static Song deserialize(InputStream is) throws IOException {
 		String path, title, artist, album;
 		int track, lengthMS, year, flags;

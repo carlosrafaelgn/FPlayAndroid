@@ -517,6 +517,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				txtCustomMinutes = UI.createDialogEditText(ctx, 0, Integer.toString((lastMenuView == optAutoTurnOff) ? Player.turnOffTimerCustomMinutes : Player.idleTurnOffTimerCustomMinutes), getText(R.string.msg_turn_off), InputType.TYPE_CLASS_NUMBER);
 				l.addView(txtCustomMinutes, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 
+				txtCustomMinutes.requestFocus();
+
 				final BgDialog dialog = new BgDialog(ctx, l, this);
 				dialog.setTitle(R.string.msg_turn_off_title);
 				dialog.setPositiveButton(R.string.ok);
@@ -1256,7 +1258,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			optAutoTurnOffPlaylist = new SettingView(ctx, UI.ICON_REPEATNONE, getText(R.string.opt_auto_turn_off_playlist).toString(), null, true, Player.turnOffWhenPlaylistEnds, false);
 			optKeepScreenOn = new SettingView(ctx, UI.ICON_SCREEN, getText(R.string.opt_keep_screen_on).toString(), null, true, UI.keepScreenOn, false);
 			optAutoNightMode = new SettingView(ctx, UI.ICON_THEME, getText(R.string.opt_auto_night_mode).toString(), null, true, UI.autoNightMode, false);
-			optTheme = new SettingView(ctx, UI.ICON_THEME, getText(R.string.color_theme).toString() + UI.collonNoSpace(), UI.getThemeString(UI.theme), false, false, false);
+			optTheme = new SettingView(ctx, UI.ICON_THEME, getText(R.string.color_theme) + UI.collonNoSpaceAtTheEnd(), UI.getThemeString(UI.theme), false, false, false);
 			optFlat = new SettingView(ctx, UI.ICON_FLAT, getText(R.string.flat_details).toString(), null, true, UI.isFlat, false);
 			optRGB = new SettingView(ctx, UI.ICON_PALETTE, "RGB", null, true, UI.isRGB, false);
 			optBorders = new SettingView(ctx, UI.ICON_TRANSPARENT, getText(R.string.borders).toString(), null, true, UI.hasBorders, false);

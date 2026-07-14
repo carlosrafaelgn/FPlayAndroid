@@ -397,6 +397,8 @@ public final class ActivityFileSelection extends ClientActivity implements View.
 				txtSaveAsName.setFilters(new InputFilter[]{this, new InputFilter.LengthFilter(64)});
 				l.addView(txtSaveAsName, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 
+				txtSaveAsName.requestFocus();
+
 				final BgDialog dialog = new BgDialog(ctx, l, this);
 				dialog.setTitle(UI.format(R.string.msg_create_new_title, itemType), true);
 				dialog.setPositiveButton(R.string.create);

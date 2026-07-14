@@ -12,6 +12,7 @@
     <string name="loading">Chargement&#8230;</string>
     <string name="adding_songs">Ajout de morceaux&#8230;</string>
     <string name="empty_list">Liste vide !</string>
+    <string name="no_songs_found">Aucune morceaux trouvée !</string>
     <string name="error">Erreur :</string>
     <string name="ok">OK</string>
     <string name="cancel">Annuler</string>
@@ -63,7 +64,7 @@
     <string name="opt_fade_in_focus">Durée du fondu d\'ouverture après un appel ou une autre interruption extérieure :</string>
     <string name="opt_fade_in_pause">Durée du fondu d\'ouverture en sortie de pause :</string>
     <string name="opt_fade_in_other">Durée du fondu d\'ouverture après un arrêt de la lecture :</string>
-    <string name="hdr_display">Apparence et Affichage</string>
+    <string name="hdr_display">Apparence et affichage</string>
     <string name="hdr_playback">Lecture</string>
     <string name="hdr_behavior">Comportement</string>
     <string name="volume_control_type_integrated">Comme le système</string>

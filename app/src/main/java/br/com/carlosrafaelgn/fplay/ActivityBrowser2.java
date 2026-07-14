@@ -385,6 +385,8 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 		l.addView(txtURL, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 		txtTitle = null;
 
+		txtURL.requestFocus();
+
 		final BgDialog dialog = new BgDialog(ctx, l, this);
 		dialog.setTitle(R.string.remote_list);
 		dialog.setPositiveButton(R.string.ok);
@@ -743,6 +745,8 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 			p.topMargin = UI.dialogMargin;
 			l.addView(txtTitle, p);
+
+			txtURL.requestFocus();
 
 			final BgDialog dialog = new BgDialog(ctx, l, this);
 			dialog.setTitle(R.string.add_url_title);

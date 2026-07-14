@@ -12,6 +12,7 @@
     <string name="loading">Cargando&#8230;</string>
     <string name="adding_songs">Añadiendo canciones&#8230;</string>
     <string name="empty_list">Lista vacía!</string>
+    <string name="no_songs_found">No se encontraron canciones!</string>
     <string name="error">Error:</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancelar</string>
@@ -63,7 +64,7 @@
     <string name="opt_fade_in_focus">Duración del fade de volumen después de una llamada, u otra interrupción externa:</string>
     <string name="opt_fade_in_pause">Duración del fade de volumen cuando se reproduce después de una pausa:</string>
     <string name="opt_fade_in_other">Duración del fade de volumen al iniciar nueva música o después de un silencio:</string>
-    <string name="hdr_display">Apariencia y Display</string>
+    <string name="hdr_display">Apariencia y display</string>
     <string name="hdr_playback">Reproducción</string>
     <string name="hdr_behavior">Comportamiento</string>
     <string name="volume_control_type_integrated">Integrado con el sistema</string>
@@ -235,7 +236,7 @@
     <string name="sort_by_artist">Ordenar por artista</string>
     <string name="sort_by_album">Ordenar por álbum</string>
     <string name="secondary_line_of_text">Línea secundaria de texto:</string>
-    <string name="scrollbar">Barra de Desplazamiento</string>
+    <string name="scrollbar">Barra de desplazamiento</string>
     <string name="scrollbar_to_the_left">Colocar las barras de desplazamiento en el lado izquierdo</string>
     <string name="scrollbar_playlist">Tipo de barra de desplazamiento para mostrar en la lista de reproducción:</string>
     <string name="scrollbar_browser_type">Tipo de barra de desplazamiento para mostrar al añadir canciones:</string>

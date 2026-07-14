@@ -12,6 +12,7 @@
     <string name="loading">Laden&#8230;</string>
     <string name="adding_songs">Titel hinzufügen&#8230;</string>
     <string name="empty_list">Liste leer!</string><!--[Leer]</string>-->
+    <string name="no_songs_found">Keine Titel gefunden!</string>
     <string name="error">Fehler:</string>
     <string name="ok">Okay</string>
     <string name="cancel">Abbruch</string>
@@ -235,10 +236,10 @@
     <string name="sort_by_artist">Nach Interpret sortieren</string>
     <string name="sort_by_album">Nach Album sortieren </string>
     <string name="secondary_line_of_text">Zweite Zeile vom Text:</string>
-    <string name="scrollbar">Scrollbar/Bildlaufleiste</string>
-    <string name="scrollbar_to_the_left">Laufleiste auf der linken Seite</string>
-    <string name="scrollbar_playlist">Typ der Laufleiste, die in der Wiedergabeliste gezeigt wird:</string>
-    <string name="scrollbar_browser_type">Typ der Laufleiste beim Hinzufügen neuer Titel:</string>
+    <string name="scrollbar">Bildlaufleiste</string>
+    <string name="scrollbar_to_the_left">Bildlaufleiste auf der linken Seite</string>
+    <string name="scrollbar_playlist">Typ der Bildlaufleiste, die in der Wiedergabeliste gezeigt wird:</string>
+    <string name="scrollbar_browser_type">Typ der Bildlaufleiste beim Hinzufügen neuer Titel:</string>
     <string name="system_integrated">Nutzung Systemscrollen</string>
     <string name="large">Groß</string>
     <string name="indexed_if_possible">Indiziert (wenn möglich)</string>

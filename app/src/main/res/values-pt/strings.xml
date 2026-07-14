@@ -12,6 +12,7 @@
     <string name="loading">Carregando&#8230;</string>
     <string name="adding_songs">Adicionando músicas&#8230;</string>
     <string name="empty_list">Lista vazia!</string>
+    <string name="no_songs_found">Nenhuma música encontrada!</string>
     <string name="error">Erro:</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancelar</string>
@@ -63,7 +64,7 @@
     <string name="opt_fade_in_focus">Duração do fade in do volume depois de uma chamada, ou de outra interrupção externa:</string>
     <string name="opt_fade_in_pause">Duração do fade in do volume ao retomar depois de uma pausa:</string>
     <string name="opt_fade_in_other">Duração do fade in do volume ao iniciar novas músicas quando estiver em silêncio:</string>
-    <string name="hdr_display">Aparência e Tela</string>
+    <string name="hdr_display">Aparência e tela</string>
     <string name="hdr_playback">Reprodução</string>
     <string name="hdr_behavior">Comportamento</string>
     <string name="volume_control_type_integrated">Integrado com o sistema</string>
@@ -235,7 +236,7 @@
     <string name="sort_by_artist">Ordenar por artista</string>
     <string name="sort_by_album">Ordenar por álbum</string>
     <string name="secondary_line_of_text">Linha secundária de texto:</string>
-    <string name="scrollbar">Barra de Rolagem</string>
+    <string name="scrollbar">Barra de rolagem</string>
     <string name="scrollbar_to_the_left">Posicionar barras de rolagem à esquerda</string>
     <string name="scrollbar_playlist">Tipo de barra de rolagem para mostrar na lista de reprodução:</string>
     <string name="scrollbar_browser_type">Tipo de barra de rolagem para mostrar ao adicionar músicas:</string>
