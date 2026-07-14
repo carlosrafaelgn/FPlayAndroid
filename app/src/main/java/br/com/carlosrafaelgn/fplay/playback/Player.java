@@ -237,6 +237,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	public static final String CHANNEL_GROUP_ID = "fplayg";
 	public static final String CHANNEL_ID = "fplay";
+	private static final int NOTIFICATION_ID = 1;
 
 	public static final boolean REMOTE_LIST_ENABLED = false;
 
@@ -430,6 +431,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			case MSG_ENABLE_RESAMPLING:
 				MediaContext._enableResampling(msg.arg1 != 0);
 				break;
+			case MSG_UPDATE_STATE:
+				// Refer to the comments in broadcastStateChange()
+				_updateState(true, null);
+				break;
 			}
 		}
 	}
@@ -505,7 +510,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		startService();
 		notificationLastUpdateTime = 0;
 		notificationBroadcastPending = false;
-		startForeground(1, getNotification());
+		startForeground(NOTIFICATION_ID, getNotification());
 		super.onCreate();
 	}
 
@@ -2052,6 +2057,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				if (metadata.icyUrl != null && metadata.icyUrl.length() > 0)
 					localSong.album = metadata.icyUrl;
 				localSong.title = title;
+				localSong.invalidateNormalizedMetadata();
 				// No longer use "Loading..." for notification, media session and so on...
 				broadcastStateChange(getCurrentTitle(false), isPreparing(), true);
 				//this will force a serialization when closing the app (saving this update)
@@ -3876,7 +3882,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	public static void refreshNotification() {
 		try {
-			notificationManager.notify(1, getNotification());
+			notificationManager.notify(NOTIFICATION_ID, getNotification());
 		} catch (Throwable ex) {
 			//why the *rare* android.os.TransactionTooLargeException?
 			//what to do?!?!
@@ -3890,11 +3896,28 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			notificationBroadcastPending = false;
 		}
 		final long now = SystemClock.uptimeMillis();
-		final long delta = now - notificationLastUpdateTime;
-		if (delta < 100 || notificationLastUpdateTime == 0) {
-			notificationBroadcastPending = true;
-			localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_BROADCAST_STATE_CHANGE, (preparing ? 0x01 : 0) | (titleOrSongHaveChanged ? 0x02 : 0), 0, title), (notificationLastUpdateTime == 0 ? ((notificationLastUpdateTime = now) + 2000) : (notificationLastUpdateTime + 110 - delta)));
-			return;
+		if (notificationLastUpdateTime == 0) {
+			// "Refer to the comments in broadcastStateChange()" in MSG_UPDATE_STATE points here :)
+			// A few years ago, in a few devices, the initial notification (just after startup)
+			// displayed "Loading...", which is the initial title, forever, until something changed.
+			// I have never been able to figure out why... I guess it had something to do with the
+			// OS throttling frequent requests to update/referesh the notification (this request
+			// comes just a few milliseconds after displaying the notification for the first time).
+			// So, I created a mechanism to delay the first notification for two seconds. Which worked!
+			// I could not reproduce that behavior on new devices.. So, I removed the two-second delay
+			// which was being applied to the first notification, but I added this new call to
+			// MSG_UPDATE_STATE, just in case there are old devices still using the app. This way,
+			// new devices will not display "Loading..." for two seconds, and old devices will receive
+			// a second refresh notification two seconds after the startup, just like before :)
+			if (handler != null)
+				handler.sendMessageAtTime(Message.obtain(handler, MSG_UPDATE_STATE), now + 2000);
+		} else {
+			final long delta = now - notificationLastUpdateTime;
+			if (delta < 100) {
+				notificationBroadcastPending = true;
+				localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_BROADCAST_STATE_CHANGE, (preparing ? 0x01 : 0) | (titleOrSongHaveChanged ? 0x02 : 0), 0, title), notificationLastUpdateTime + 110);
+				return;
+			}
 		}
 		notificationLastUpdateTime = now;
 		refreshNotification();
