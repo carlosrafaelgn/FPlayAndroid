@@ -59,6 +59,7 @@ import android.view.animation.Interpolator;
 import android.view.animation.ScaleAnimation;
 import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
+import android.window.OnBackInvokedDispatcher;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -84,7 +85,7 @@ import br.com.carlosrafaelgn.fplay.util.Timer;
 //
 public final class ActivityHost extends Activity implements Player.PlayerDestroyedObserver, Player.PlayerBackgroundMonitor, Animation.AnimationListener, FastAnimator.Observer, Interpolator, Timer.TimerHandler, Runnable {
 	private ClientActivity top;
-	private boolean isFading, useFadeOutNextTime, ignoreFadeNextTime, createLayoutCausedAnimation, exitOnDestroy, accelerate, isCreatingLayout, pendingOrientationChanges;
+	private boolean isFading, useFadeOutNextTime, ignoreFadeNextTime, createLayoutCausedAnimation, exitOnDestroy, accelerate, isCreatingLayout, pendingOrientationChanges, onBackInvokedCallbackOK;
 	private BgFrameLayout baseParent;
 	private FrameLayout parent;
 	private View oldView, newView, pendingTransitionView;
@@ -593,21 +594,27 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		System.gc();
 	}
 
-	@Override
-	public void onBackPressed() {
+	private boolean onBackPressedInternal() {
 		if (isFading)
-			return;
+			return true;
 		if (top != null) {
 			if (top.onBackPressed())
-				return;
+				return true;
 			if (top != null && top.previousActivity != null) {
 				finishActivity(top, null, 0, true);
-				return;
+				return true;
 			}
 		}
+		return false;
+	}
+
+	@Override
+	public void onBackPressed() {
+		if (onBackInvokedCallbackOK || onBackPressedInternal())
+			return;
 		super.onBackPressed();
 	}
-	
+
 	@Override
 	public boolean onPrepareOptionsMenu(Menu menu) {
 		if (isFading)
@@ -727,6 +734,17 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		Player.songs.syncAlbumArtFetcher();
 
 		baseParent = new BgFrameLayout(this);
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+			getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, () -> {
+				if (!onBackPressedInternal())
+					finish();
+			});
+
+			onBackInvokedCallbackOK = true;
+		} else {
+			onBackInvokedCallbackOK = false;
+		}
 
 		// No solution available yet: https://stackoverflow.com/q/79406826/3569421
 		if (Build.VERSION.SDK_INT >= 35) {
