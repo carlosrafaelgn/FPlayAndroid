@@ -996,9 +996,13 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		s2.add(1, MNU_VISUALIZER_ALBUMART, 1, R.string.album_art)
 			.setOnMenuItemClickListener(this)
 			.setIcon(new TextIconDrawable(UI.ICON_ALBUMART));
-		s2.add(1, MNU_VISUALIZER_BLUETOOTH, 2, "Bluetooth + Arduino")
-			.setOnMenuItemClickListener(this)
-			.setIcon(new TextIconDrawable(UI.ICON_BLUETOOTH));
+		if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
+			// Bluetooth visualizer must be adapted in order to be used in Android S and above
+			// https://developer.android.com/reference/android/bluetooth/BluetoothAdapter
+			s2.add(1, MNU_VISUALIZER_BLUETOOTH, 2, "Bluetooth + Arduino")
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(UI.ICON_BLUETOOTH));
+		}
 		UI.separator(s2, 2, 0);
 		s2.add(2, MNU_VISUALIZER_LIQUID, 1, "Liquid Spectrum")
 			.setOnMenuItemClickListener(this)
