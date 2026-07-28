@@ -42,6 +42,7 @@
     <string name="msg_play">Эта кнопка добавляет в список воспроизведения все композиции в папке и её подпапках и начинает воспроизведение.</string>
     <string name="msg_error_download_path">Отсутствует возможность получить доступ к папке загрузки :(</string>
     <string name="msg_error_exporting_settings">Что-то пошло не так при экспорте настроек :(</string>
+    <string name="opt_bluetooth_connect">Обнаружение подключения Bluetooth-гарнитуры</string>
     <string name="opt_language">Язык:</string>
     <string name="opt_use_alternate_typeface">Использовать дислексический шрифт (опция недоступна для данного языка)</string>
     <string name="opt_auto_turn_off">Выключить плеер автоматически после:</string>

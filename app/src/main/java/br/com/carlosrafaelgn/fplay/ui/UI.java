@@ -1765,12 +1765,12 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	}
 
 	public static void showNextStartupMsg(Context context) {
-		if (msgStartup >= 38) {
-			msgStartup = 38;
+		if (msgStartup >= 39) {
+			msgStartup = 39;
 			return;
 		}
 		final int title = R.string.new_setting;
-		msgStartup = 38;
+		msgStartup = 39;
 		//final String content = context.getText(R.string.startup_message).toString() + "!\n\n" + context.getText(R.string.there_are_new_features).toString() + "\n- " + context.getText(R.string.expand_seek_bar).toString() + "\n\n" + context.getText(R.string.check_it_out).toString();
 		//final String content = context.getText(R.string.there_are_new_features).toString() + "\n- " + context.getText(R.string.fullscreen).toString() + "\n- " + context.getText(R.string.transition).toString() + "\n- " + context.getText(R.string.color_theme).toString() + ": " + context.getText(R.string.creamy).toString() + "\n\n" + context.getText(R.string.check_it_out).toString();
 		//final String content = context.getText(R.string.startup_message).toString();
@@ -1791,6 +1791,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		final String content = //"- " + context.getText(R.string.ringtone) +
 			//"\n\n" +
 			context.getText(R.string.there_are_new_features) +
+			((Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ? ("\n\n- " + context.getText(R.string.bluetooth) + collon() + context.getText(R.string.opt_bluetooth_connect)) : "") +
+			((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ? ("\n\n- " + context.getText(R.string.msg_turn_off_title) + collon() + context.getText(R.string.opt_read_phone_state)) : "") +
 			"\n\n- " + context.getText(R.string.hdr_display) + collon() + "RGB" +
 			"\n\n- " + context.getText(R.string.hdr_display) + collon() + context.getText(R.string.night_mode) +
 			"\n\n- " + context.getText(R.string.hdr_display) + collon() + context.getText(R.string.album_art) +

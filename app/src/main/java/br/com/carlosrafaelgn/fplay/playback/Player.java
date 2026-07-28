@@ -652,6 +652,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				filter.addAction("android.media.ACTION_SCO_AUDIO_STATE_UPDATED");
 			else
 				filter.addAction("android.media.SCO_AUDIO_STATE_CHANGED");
+			//https://developer.android.com/reference/android/bluetooth/BluetoothHeadset#ACTION_AUDIO_STATE_CHANGED
+			//BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED
 			filter.addAction("android.bluetooth.headset.profile.action.CONNECTION_STATE_CHANGED");
 			filter.addAction("android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED");
 			//HEADSET_STATE_CHANGED is based on: https://groups.google.com/forum/#!topic/android-developers/pN2k5_kFo4M

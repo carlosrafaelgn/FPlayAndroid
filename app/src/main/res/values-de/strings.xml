@@ -42,6 +42,7 @@
     <string name="msg_play">Diese Schaltfläche fügt alle Titel des Ordners und der Unterordner zur Wiedergabeliste hinzu und startet die Wiedergabe.</string>
     <string name="msg_error_download_path">Kein Zugriff auf den Download Ordner :(</string>
     <string name="msg_error_exporting_settings">Problem beim Export der Einstellungen :(</string>
+    <string name="opt_bluetooth_connect">Erkennung der Bluetooth-Headset-Verbindung</string>
     <string name="opt_language">Sprache:</string>
     <string name="opt_use_alternate_typeface">Dyslexie freundliche Schrift verwenden</string>
     <string name="opt_auto_turn_off">Player automatisch beenden nach:</string>

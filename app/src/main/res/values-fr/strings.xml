@@ -42,6 +42,7 @@
     <string name="msg_play">Ce bouton ajoute à la playlist tous les morceaux du dossier et de ses sous-dossiers, et démarre la lecture.</string>
     <string name="msg_error_download_path">Impossile d\'accéder au dossier de téléchargement :(</string>
     <string name="msg_error_exporting_settings">Un problème est survenu pendant l\'export des paramètres :(</string>
+    <string name="opt_bluetooth_connect">Détection de connexion d\'un casque Bluetooth</string>
     <string name="opt_language">Langue :</string>
     <string name="opt_use_alternate_typeface">Utiliser la fonte pour dyslexiques</string>
     <string name="opt_auto_turn_off">Fermer FPlay automatiquement après :</string>

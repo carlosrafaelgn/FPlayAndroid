@@ -42,6 +42,7 @@
     <string name="msg_play">Este boton añade a la lista de reproducción, todas las canciones en la carpeta incluyendo las subcarpetas e inicia la reproducción.</string>
     <string name="msg_error_download_path">No fue posible acceder a la carpeta de descarga :(</string>
     <string name="msg_error_exporting_settings">Algo salió mal al exportar la configuración :(</string>
+    <string name="opt_bluetooth_connect">Detección de conexión de auriculares Bluetooth</string>
     <string name="opt_language">Idioma:</string>
     <string name="opt_use_alternate_typeface">Usar fuente amigable para dislexia</string>
     <string name="opt_auto_turn_off">Apagar automáticamente el reproductor después de:</string>

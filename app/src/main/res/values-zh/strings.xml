@@ -49,6 +49,7 @@
 	<string name="msg_play">这个按钮将所有在文件夹及其子文件夹内的所有歌曲添加到播放列表，并开始播放。</string>
 	<string name="msg_error_download_path">无法访问下载文件夹 :(</string>
 	<string name="msg_error_exporting_settings">导出设置时错误 :(</string>
+    <string name="opt_bluetooth_connect">蓝牙耳机连接检测</string>
 	<string name="opt_language">语言：</string>
 	<string name="opt_use_alternate_typeface">使用易读的字体（不支持中文）</string>
 	<string name="opt_auto_turn_off">自动关闭播放器：</string>

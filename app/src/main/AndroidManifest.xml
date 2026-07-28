@@ -29,6 +29,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- See this: http://developer.android.com/reference/android/bluetooth/BluetoothHeadset.html#ACTION_AUDIO_STATE_CHANGED -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <!--
         For scanning bluetooth devices
         https://developer.android.com/develop/connectivity/bluetooth/bt-permissions#assert-never-for-location

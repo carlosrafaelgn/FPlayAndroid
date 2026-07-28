@@ -42,6 +42,7 @@
     <string name="msg_play">Este botão adiciona à lista de reprodução, todas as músicas na pasta e em suas subpastas, e inicia sua reprodução.</string>
     <string name="msg_error_download_path">Não foi possível acessar a pasta de downloads :(</string>
     <string name="msg_error_exporting_settings">Algo deu errado durante a exportação das configurações :(</string>
+    <string name="opt_bluetooth_connect">Detecção de conexão de fone de ouvido Bluetooth</string>
     <string name="opt_language">Idioma:</string>
     <string name="opt_use_alternate_typeface">Usar fonte amigável para dislexia</string>
     <string name="opt_auto_turn_off">Desligar o player automaticamente em:</string>
