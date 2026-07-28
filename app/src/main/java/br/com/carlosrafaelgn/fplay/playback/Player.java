@@ -70,6 +70,7 @@ import android.os.Message;
 import android.os.PowerManager;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
+import android.telecom.TelecomManager;
 import android.telephony.TelephonyManager;
 import android.text.format.Formatter;
 import android.util.Base64;
@@ -256,7 +257,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static Handler handler, localHandler;
 	private static AudioManager audioManager;
 	private static NotificationManager notificationManager;
-	private static TelephonyManager telephonyManager;
+	private static Object telephonyManager;
 	public static final SongList songs = SongList.getInstance();
 
 	//keep these instances here to prevent UI, MainHandler, Equalizer, BassBoost,
@@ -619,7 +620,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 				createNotificationChannel();
 			audioManager = (AudioManager)theApplication.getSystemService(AUDIO_SERVICE);
-			telephonyManager = (TelephonyManager)theApplication.getSystemService(TELEPHONY_SERVICE);
+			telephonyManager = theApplication.getSystemService((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) ? TELECOM_SERVICE : TELEPHONY_SERVICE);
 			destroyedObservers = new TypedRawArrayList<>(PlayerDestroyedObserver.class, 4);
 			stickyBroadcast = new Intent();
 			loadConfig();
@@ -3031,6 +3032,27 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 	}
 
+	private static boolean isInCall() {
+		// https://developer.android.com/reference/android/Manifest.permission#READ_PHONE_STATE
+		// https://developer.android.com/reference/android/telecom/TelecomManager#isInCall()
+		// https://developer.android.com/reference/android/telephony/TelephonyManager#getCallState()
+		if (telephonyManager != null) {
+			try {
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && thePlayer.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED)
+						return false;
+					return ((TelecomManager)telephonyManager).isInCall();
+				} else if (((TelephonyManager)telephonyManager).getCallState() != TelephonyManager.CALL_STATE_IDLE) {
+					return true;
+				}
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+		}
+
+		return false;
+	}
+
 	private static void processIdleTurnOffTimer() {
 		if (state > STATE_ALIVE || localHandler == null)
 			return;
@@ -3041,15 +3063,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 		boolean wasPlayingBeforeOngoingCall = false, sendMessage = false;
 		final boolean idle = (!localPlaying && appNotInForeground);
-		if (idle && telephonyManager != null) {
-			//check for ongoing call
-			try {
-				if (telephonyManager.getCallState() != TelephonyManager.CALL_STATE_IDLE)
-					wasPlayingBeforeOngoingCall = resumePlaybackAfterFocusGain;
-			} catch (Throwable ex) {
-				ex.printStackTrace();
-			}
-		}
+		if (idle && isInCall())
+			wasPlayingBeforeOngoingCall = resumePlaybackAfterFocusGain;
 		if (!idle || wasPlayingBeforeOngoingCall) {
 			if (idle) {
 				//consider time spent in calls as active time, but keep checking,
@@ -3763,14 +3778,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			case AUDIO_SINK_WIRE:
 			case AUDIO_SINK_WIRE_MIC:
 				if (!playing && playWhenHeadsetPlugged) {
-					if (!hasFocus) {
-						try {
-							if (telephonyManager != null && telephonyManager.getCallState() != TelephonyManager.CALL_STATE_IDLE)
-								break;
-						} catch (Throwable ex) {
-							ex.printStackTrace();
-						}
-					}
+					if (!hasFocus && isInCall())
+						break;
 					if (reinitializeEffects && audioSinkUsedInEffects != audioSink && player != null) {
 						reinitializeEffects = false;
 						_reinitializeEffects();

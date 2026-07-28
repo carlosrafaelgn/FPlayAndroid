@@ -32,6 +32,8 @@
 //
 package br.com.carlosrafaelgn.fplay;
 
+import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
@@ -39,10 +41,12 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Message;
 import android.os.SystemClock;
+import android.provider.Settings;
 import android.text.InputType;
 import android.text.TextUtils.TruncateAt;
 import android.view.ContextMenu;
@@ -99,7 +103,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private LinearLayout panelSettings;
 	private ViewGroup viewForPadding;
 	private SettingView firstViewAdded, lastViewAdded, optLoadCurrentTheme, optUseAlternateTypeface,
-		optAutoTurnOff, optAutoIdleTurnOff, optAutoTurnOffPlaylist, optKeepScreenOn, optTheme, optFlat, optRGB,
+		optAutoTurnOff, optAutoIdleTurnOff, optReadPhoneState, optAutoTurnOffPlaylist, optKeepScreenOn, optTheme, optFlat, optRGB,
 		optBorders, optPlayWithLongPress, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume,
 		opt3D, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optPlaceTitleAtTheBottom,
 		optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList,
@@ -1254,6 +1258,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				optUseAlternateTypeface = new SettingView(ctx, UI.ICON_DYSLEXIA, getText(R.string.opt_use_alternate_typeface).toString(), null, true, UI.isUsingAlternateTypeface, false);
 			optAutoTurnOff = new SettingView(ctx, UI.ICON_CLOCK, getText(R.string.opt_auto_turn_off).toString(), getAutoTurnOffString(), false, false, false);
 			optAutoIdleTurnOff = new SettingView(ctx, UI.ICON_CLOCK, getText(R.string.opt_auto_idle_turn_off).toString(), getAutoIdleTurnOffString(), false, false, false);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+				optReadPhoneState = new SettingView(ctx, UI.ICON_DIAL, getText(R.string.opt_read_phone_state).toString(), null, true, ctx.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED, false);
 			optAutoTurnOffPlaylist = new SettingView(ctx, UI.ICON_REPEATNONE, getText(R.string.opt_auto_turn_off_playlist).toString(), null, true, Player.turnOffWhenPlaylistEnds, false);
 			optKeepScreenOn = new SettingView(ctx, UI.ICON_SCREEN, getText(R.string.opt_keep_screen_on).toString(), null, true, UI.keepScreenOn, false);
 			optAutoNightMode = new SettingView(ctx, UI.ICON_THEME, getText(R.string.opt_auto_night_mode).toString(), null, true, UI.autoNightMode, false);
@@ -1331,6 +1337,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			addHeader(ctx, R.string.msg_turn_off_title, optAutoTurnOffPlaylist, hIdx++);
 			addOption(optAutoTurnOff);
 			addOption(optAutoIdleTurnOff);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+				addOption(optReadPhoneState);
 			addOption(optAutoTurnOffPlaylist);
 			if (BuildConfig.X) {
 				addHeader(ctx, R.string.performance, optAutoTurnOffPlaylist, hIdx++);
@@ -1454,6 +1462,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
 			if (optAutoIdleTurnOff != null)
 				optAutoIdleTurnOff.setSecondaryText(getAutoIdleTurnOffString());
+			if (optReadPhoneState != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+				optReadPhoneState.setChecked(getHostActivity().checkSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED);
 		}
 	}
 	
@@ -1481,6 +1491,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optUseAlternateTypeface = null;
 		optAutoTurnOff = null;
 		optAutoIdleTurnOff = null;
+		optReadPhoneState = null;
 		optAutoTurnOffPlaylist = null;
 		optKeepScreenOn = null;
 		optAutoNightMode = null;
@@ -1567,7 +1578,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	
 	@Override
 	public void onClick(View view) {
-		if (!isLayoutCreated())
+		if (!isLayoutCreated() || view == null)
 			return;
 		if (view == btnGoBack) {
 			if (!cancelGoBack())
@@ -1863,10 +1874,32 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			lastMenuView = null;
 			CustomContextMenu.openContextMenu(view, this);
 			return;
+		} else if (view == optReadPhoneState) {
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+				if (getHostActivity().checkSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
+					optReadPhoneState.setChecked(true);
+					final Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+					intent.setData(Uri.fromParts("package", getHostActivity().getPackageName(), null));
+					getHostActivity().startActivity(intent);
+				} else {
+					optReadPhoneState.setChecked(false);
+					getHostActivity().requestPermissions(new String[]{Manifest.permission.READ_PHONE_STATE}, 1);
+				}
+			}
+			return;
 		}
 		configsChanged = true;
 	}
-	
+
+	@TargetApi(Build.VERSION_CODES.M)
+	@Override
+	public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+		if (requestCode == 1) {
+			if (optReadPhoneState != null && grantResults != null && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+				optReadPhoneState.setChecked(true);
+		}
+	}
+
 	@Override
 	public void onClick(DialogInterface dialog, int which) {
 		if (!isLayoutCreated())

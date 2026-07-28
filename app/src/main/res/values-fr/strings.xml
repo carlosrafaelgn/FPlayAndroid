@@ -46,6 +46,7 @@
     <string name="opt_use_alternate_typeface">Utiliser la fonte pour dyslexiques</string>
     <string name="opt_auto_turn_off">Fermer FPlay automatiquement après :</string>
     <string name="opt_auto_idle_turn_off">Si inactif, fermer FPlay automatiquement après :</string>
+    <string name="opt_read_phone_state">Empêcher FPlay de s\'éteindre pendant les appels téléphoniques</string>
     <string name="opt_auto_turn_off_playlist">Fermer FPlay une fois la fin de la liste atteinte (\"Ne pas répéter\" doit être sélectionné)</string>
 	<string name="opt_keep_screen_on">Garder l\'écran allumé</string>
     <string name="opt_volume_control_type">Contrôle du volume :</string>

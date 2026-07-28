@@ -53,6 +53,7 @@
 	<string name="opt_use_alternate_typeface">使用易读的字体（不支持中文）</string>
 	<string name="opt_auto_turn_off">自动关闭播放器：</string>
 	<string name="opt_auto_idle_turn_off">当无歌曲播放时，自动关闭播放器</string>
+    <string name="opt_read_phone_state">防止播放器在通话期间关闭</string>
 	<string name="opt_auto_turn_off_playlist">当播放列表播放完后，自动关闭播放器（必须同时选择“不重复”）</string>
 	<string name="opt_keep_screen_on">保持屏幕常亮</string>
 	<string name="opt_volume_control_type">音量控制类型</string>

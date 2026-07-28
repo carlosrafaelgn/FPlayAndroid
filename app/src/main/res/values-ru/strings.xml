@@ -46,6 +46,7 @@
     <string name="opt_use_alternate_typeface">Использовать дислексический шрифт (опция недоступна для данного языка)</string>
     <string name="opt_auto_turn_off">Выключить плеер автоматически после:</string>
     <string name="opt_auto_idle_turn_off">В режиме ожидания, выключить плеер автоматически после:</string>
+    <string name="opt_read_phone_state">Предотвратить выключение плеера во время телефонных звонков</string>
     <string name="opt_auto_turn_off_playlist">Выключите проигрыватель при достижении конца списка воспроизведения (\"Не повторять\" должен быть выбран)</string>
     <string name="opt_keep_screen_on">Держать экран постоянно включённым</string>
     <string name="opt_volume_control_type">Тип регулятора громкости:</string>
