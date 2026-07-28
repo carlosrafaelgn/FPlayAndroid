@@ -2366,7 +2366,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static PendingIntent intentActivityHost, intentPrevious, intentPlayPause, intentNext, intentExit;
 	private static int headsetHookActions, headsetHookPressCount, telephonyFeatureState;
 	public static String path, originalPath, radioSearchTerm;
-	public static boolean lastRadioSearchWasByGenre, nextPreparationEnabled, doNotAttenuateVolume, clearListWhenPlayingFolders, controlMode, bassBoostMode, handleCallKey, playWhenHeadsetPlugged, goBackWhenPlayingFolders, turnOffWhenPlaylistEnds, followCurrentSong, announceCurrentSong;
+	public static boolean lastRadioSearchWasByGenre, nextPreparationEnabled, doNotAttenuateVolume, clearListWhenPlayingFolders, controlMode, bassBoostMode, handleCallKey, playWhenHeadsetPlugged, goBackWhenPlayingFolders, turnOffWhenPlaylistEnds, followCurrentSong, announceCurrentSong, forceAutoIdleTurnOff;
 	public static int radioLastGenre, radioLastGenreShoutcast, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther, turnOffTimerCustomMinutes, turnOffTimerSelectedMinutes, idleTurnOffTimerCustomMinutes, idleTurnOffTimerSelectedMinutes, filePrefetchSize;
 	public static Object radioStationCache, radioStationCacheShoutcast;
 
@@ -2507,6 +2507,23 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		UI.allowPlayerAboveLockScreen = opts.getBit(OPTBIT_ALLOW_LOCK_SCREEN, true);
 		UI.albumArtSongList = opts.getBit(OPTBIT_ALBUMART_SONG_LIST, Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP);
 		filePrefetchSize = getFilePrefetchSizeFromOptions((opts.getBitI(OPTBIT_FILE_PREFETCH_SIZE1, 1) << 1) | opts.getBitI(OPTBIT_FILE_PREFETCH_SIZE0, 1));
+
+		if (!UI.isChromebook && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+			// Should the entire architecture be restructured in order to comply with the new Android behavior...?
+			// When Android hides the notification after a period of idle playback, the delete intent
+			// is not called and NotificationListenerService.getActiveNotifications() still returns
+			// our notification as if it were active/visible... :(
+			// https://share.google/aimode/NxNbaPKKNETAgK8by
+			// https://github.com/androidx/media/issues/672
+			// https://developer.android.com/media/media3/session/background-playback
+			// https://developer.android.com/training/cars/media/enable-playback
+			// https://github.com/androidx/media/issues/2851
+			forceAutoIdleTurnOff = true;
+			if (idleTurnOffTimerSelectedMinutes < 2 || UI.lastVersionCode < 3000139)
+				idleTurnOffTimerSelectedMinutes = 2;
+			if (idleTurnOffTimerCustomMinutes <= 2)
+				idleTurnOffTimerCustomMinutes = 1;
+		}
 
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
 		if (count > 0) {
@@ -3113,8 +3130,13 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		idleTurnOffTimerSent = false;
 		localHandler.removeMessages(MSG_IDLE_TURN_OFF_TIMER);
 		if (minutes > 0) {
-			if (minutes != 60 && minutes != 90 && minutes != 120)
-				idleTurnOffTimerCustomMinutes = minutes;
+			if (forceAutoIdleTurnOff) {
+				if (minutes != 2 && minutes != 60 && minutes != 90 && minutes != 120)
+					idleTurnOffTimerCustomMinutes = minutes;
+			} else {
+				if (minutes != 60 && minutes != 90 && minutes != 120)
+					idleTurnOffTimerCustomMinutes = minutes;
+			}
 			idleTurnOffTimerSelectedMinutes = minutes;
 			processIdleTurnOffTimer();
 		} else {

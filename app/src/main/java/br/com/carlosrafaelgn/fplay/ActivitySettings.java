@@ -157,9 +157,15 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			UI.prepare(menu);
 			final int s = ((view == optAutoTurnOff) ? Player.turnOffTimerSelectedMinutes : Player.idleTurnOffTimerSelectedMinutes);
 			final int c = ((view == optAutoTurnOff) ? Player.turnOffTimerCustomMinutes : Player.idleTurnOffTimerCustomMinutes);
-			menu.add(0, 0, 0, R.string.never)
-				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(s <= 0 ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
+			if (Player.forceAutoIdleTurnOff) {
+				menu.add(0, 2, 0, getMinuteString(2))
+					.setOnMenuItemClickListener(this)
+					.setIcon(new TextIconDrawable(s == 2 ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
+			} else {
+				menu.add(0, 0, 0, R.string.never)
+					.setOnMenuItemClickListener(this)
+					.setIcon(new TextIconDrawable(s <= 0 ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
+			}
 			UI.separator(menu, 0, 1);
 			menu.add(1, c, 0, getMinuteString(c))
 				.setOnMenuItemClickListener(this)
@@ -177,7 +183,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			UI.separator(menu, 2, 4);
 			menu.add(3, -2, 0, R.string.custom)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(s != c && s != 60 && s != 90 && s != 120 && s > 0 ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
+				.setIcon(new TextIconDrawable(!(Player.forceAutoIdleTurnOff && s == 2) && s != c && s != 60 && s != 90 && s != 120 && s > 0 ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		} else if (view == optForcedLocale) {
 			final int o = UI.forcedLocale;
 			lastMenuView = optForcedLocale;
@@ -1920,6 +1926,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 						Player.setTurnOffTimer(m);
 						optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
 					} else {
+						if (Player.forceAutoIdleTurnOff && m < 1)
+							m = 1;
 						Player.setIdleTurnOffTimer(m);
 						optAutoIdleTurnOff.setSecondaryText(getAutoIdleTurnOffString());
 					}
