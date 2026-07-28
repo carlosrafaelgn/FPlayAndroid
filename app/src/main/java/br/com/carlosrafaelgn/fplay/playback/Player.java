@@ -516,6 +516,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 
 	@Override
 	public void onDestroy() {
+		stopService();
 		super.onDestroy();
 		System.exit(0);
 	}
@@ -563,7 +564,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public void onTaskRemoved(Intent rootIntent) {
 		super.onTaskRemoved(rootIntent);
 
-		if (!localPlaying || localPlayerBuffering || localPlayerState != PLAYER_STATE_LOADED)
+		//if (!localPlaying || localPlayerBuffering || localPlayerState != PLAYER_STATE_LOADED)
 			stopService();
 	}
 
