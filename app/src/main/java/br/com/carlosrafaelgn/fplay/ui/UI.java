@@ -36,6 +36,7 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Dialog;
+import android.app.LocaleManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -56,6 +57,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
+import android.os.LocaleList;
 import android.os.StrictMode;
 import android.text.InputType;
 import android.text.TextPaint;
@@ -686,37 +688,38 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 
 	public static Locale getLocaleFromCode(int localeCode) {
 		final Locale l = Locale.getDefault();
+		final String language = l.getLanguage().toLowerCase(Locale.US);
 		switch (localeCode) {
 		case LOCALE_US:
-			if (!"en".equals(l.getLanguage()))
+			if (!"en".equals(language))
 				return Locale.US;
 			break;
 		case LOCALE_PTBR:
-			if (!"pt".equals(l.getLanguage()))
+			if (!"pt".equals(language))
 				return new Locale("pt", "BR");
 			break;
 		case LOCALE_RU:
-			if (!"ru".equals(l.getLanguage()))
+			if (!"ru".equals(language))
 				return new Locale("ru", "RU");
 			break;
 		case LOCALE_UK:
-			if (!"uk".equals(l.getLanguage()))
+			if (!"uk".equals(language))
 				return new Locale("uk");
 			break;
 		case LOCALE_ES:
-			if (!"es".equals(l.getLanguage()))
+			if (!"es".equals(language))
 				return new Locale("es");
 			break;
 		case LOCALE_DE:
-			if (!"de".equals(l.getLanguage()))
+			if (!"de".equals(language))
 				return new Locale("de");
 			break;
 		case LOCALE_FR:
-			if (!"fr".equals(l.getLanguage()))
+			if (!"fr".equals(language))
 				return new Locale("fr");
 			break;
 		case LOCALE_ZH:
-			if (!"zh".equals(l.getLanguage()))
+			if (!"zh".equals(language))
 				return new Locale("zh");
 			break;
 		}
@@ -747,21 +750,30 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	
 	public static int getCurrentLocale() {
 		try {
-			final String l = Player.theApplication.getResources().getConfiguration().locale.getLanguage().toLowerCase(Locale.US);
-			if ("pt".equals(l))
+			final Configuration cfg = Player.theApplication.getResources().getConfiguration();
+			Locale l = cfg.locale;
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+				final LocaleList localeList = cfg.getLocales();
+				if (!localeList.isEmpty())
+					l = localeList.get(0);
+			}
+			final String language = l.getLanguage().toLowerCase(Locale.US);
+			switch (language) {
+			case "pt":
 				return LOCALE_PTBR;
-			if ("ru".equals(l))
+			case "ru":
 				return LOCALE_RU;
-			if ("uk".equals(l))
+			case "uk":
 				return LOCALE_UK;
-			if ("es".equals(l))
+			case "es":
 				return LOCALE_ES;
-			if ("de".equals(l))
+			case "de":
 				return LOCALE_DE;
-			if ("fr".equals(l))
+			case "fr":
 				return LOCALE_FR;
-			if ("zh".equals(l))
+			case "zh":
 				return LOCALE_ZH;
+			}
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
@@ -782,10 +794,14 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	}
 
 	public static void reapplyForcedLocale(Activity activityContext) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+			return;
 		setForcedLocale(activityContext, forcedLocale);
 	}
 
 	public static void reapplyForcedLocaleOnPlugins(Context context) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+			return;
 		try {
 			setForcedLocaleOnContexts(context, null, forcedLocale);
 		} catch (Throwable ex) {
@@ -794,10 +810,45 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 	}
 
 	private static void setForcedLocaleOnContexts(Context context, Activity activityContext, int localeCode) {
-		final Locale l = getLocaleFromCode(localeCode);
+		Locale l = getLocaleFromCode(localeCode);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+			LocaleManager localeManager = context.getSystemService(LocaleManager.class);
+			if (localeManager != null) {
+				if (localeCode == 0) {
+					final LocaleList localeList = localeManager.getSystemLocales();
+					//find the first supported locale, or use the app's default (en)
+					if (!localeList.isEmpty()) {
+						l = Locale.US;
+						_localeListLoop: for (int i = 0; i < localeList.size(); i++) {
+							final String language = localeList.get(i).getLanguage();
+							switch (language) {
+							case "en":
+							case "pt":
+							case "ru":
+							case "uk":
+							case "es":
+							case "de":
+							case "fr":
+							case "zh":
+								l = localeList.get(i);
+								break _localeListLoop;
+							}
+						}
+					}
+					localeManager.setApplicationLocales(LocaleList.getEmptyLocaleList());
+				} else {
+					//avoid reapplying the same locale again
+					final LocaleList localeList = localeManager.getApplicationLocales();
+					if (localeList.isEmpty() || !localeList.get(0).getLanguage().toLowerCase(Locale.US).equals(l.getLanguage().toLowerCase(Locale.US)))
+						localeManager.setApplicationLocales(new LocaleList(l));
+				}
+			}
+		}
 		final Resources res = context.getResources();
 		final Configuration cfg = new Configuration();
 		cfg.locale = l;
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+			cfg.setLocale(l);
 		res.getConfiguration().updateFrom(cfg);
 		res.updateConfiguration(res.getConfiguration(), res.getDisplayMetrics());
 		if (activityContext != null) {

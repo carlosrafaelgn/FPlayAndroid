@@ -538,6 +538,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		} else if (lastMenuView == optForcedLocale) {
 			if (item.getItemId() != UI.forcedLocale) {
 				UI.setForcedLocale(ctx, item.getItemId());
+				if (Player.state < Player.STATE_TERMINATING)
+					Player.saveConfig(false);
 				WidgetMain.updateWidgets();
 				onCleanupLayout();
 				onCreateLayout(false);

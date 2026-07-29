@@ -867,7 +867,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 	
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View view, ContextMenuInfo menuInfo) {
-		if (UI.forcedLocale != UI.LOCALE_NONE && Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN && !localeHasBeenChanged) {
+		if (UI.forcedLocale != UI.LOCALE_NONE && !localeHasBeenChanged) {
 			localeHasBeenChanged = true;
 			UI.reapplyForcedLocale(getHostActivity());
 		}
@@ -1895,7 +1895,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			Player.observer = null;
 		lastTime = -2;
 		pendingListCommand = 0;
-		if (UI.forcedLocale != UI.LOCALE_NONE && Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN && !localeHasBeenChanged) {
+		if (UI.forcedLocale != UI.LOCALE_NONE && !localeHasBeenChanged) {
 			localeHasBeenChanged = true;
 			UI.reapplyForcedLocale(getHostActivity());
 		}

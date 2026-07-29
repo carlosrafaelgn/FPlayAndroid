@@ -9,7 +9,7 @@ android {
 	defaultConfig {
 		applicationId "br.com.carlosrafaelgn.fplay"
 		minSdk 10
-		targetSdk 35
+		targetSdk 36
 		versionCode 3000139
 		versionName "1.993"
 	}
@@ -46,14 +46,14 @@ android {
 		traditional {
 			dimension 'mode'
 			applicationId 'br.com.carlosrafaelgn.fplay'
-			targetSdk 35
+			targetSdk 36
 			minSdk 10
 			buildConfigField 'boolean', 'X', 'false'
 		}
 		x {
 			dimension 'mode'
 			applicationId 'br.com.carlosrafaelgn.fplay.x'
-			targetSdk 35
+			targetSdk 36
 			minSdk 16
 			buildConfigField 'boolean', 'X', 'true'
 		}

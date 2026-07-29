@@ -4090,7 +4090,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			} else if (msg == null || msg.length() == 0) {
 				UI.toast(R.string.error_playback);
 			} else {
-				final StringBuilder sb = new StringBuilder(thePlayer.getText(R.string.error_msg));
+				final StringBuilder sb = new StringBuilder(thePlayer.getApplicationContext().getText(R.string.error_msg));
 				sb.append(' ');
 				sb.append(msg);
 				UI.toast(sb);
