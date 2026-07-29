@@ -258,6 +258,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static AudioManager audioManager;
 	private static NotificationManager notificationManager;
 	private static Object telephonyManager;
+	private static PowerManager powerManager;
 	public static final SongList songs = SongList.getInstance();
 
 	//keep these instances here to prevent UI, MainHandler, Equalizer, BassBoost,
@@ -621,6 +622,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				createNotificationChannel();
 			audioManager = (AudioManager)theApplication.getSystemService(AUDIO_SERVICE);
 			telephonyManager = theApplication.getSystemService((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) ? TELECOM_SERVICE : TELEPHONY_SERVICE);
+			powerManager = (PowerManager)theApplication.getSystemService(POWER_SERVICE);
 			destroyedObservers = new TypedRawArrayList<>(PlayerDestroyedObserver.class, 4);
 			stickyBroadcast = new Intent();
 			loadConfig();
@@ -781,6 +783,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		notificationManager = null;
 		audioManager = null;
 		telephonyManager = null;
+		powerManager = null;
 		externalReceiver = null;
 		stickyBroadcast = null;
 		intentActivityHost = null;
@@ -3064,6 +3067,14 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	public static void setActivityVisualizerInForeground(boolean activityVisualizerInForeground) {
 		Player.activityVisualizerInForeground = activityVisualizerInForeground;
 		checkAppNotInForeground();
+	}
+
+	public static boolean isInteractive() {
+		// Are there advantages of using Display.getState()?
+		// https://developer.android.com/reference/android/os/PowerManager#isInteractive()
+		// https://developer.android.com/reference/android/view/Display#getState()
+		// https://stackoverflow.com/a/17348755/3569421
+		return ((powerManager == null) || ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) ? powerManager.isInteractive() : powerManager.isScreenOn()));
 	}
 
 	private static boolean isInCall() {

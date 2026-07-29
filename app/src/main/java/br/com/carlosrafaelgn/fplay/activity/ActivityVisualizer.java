@@ -553,7 +553,7 @@ public final class ActivityVisualizer extends Activity implements br.com.carlosr
 
 	@Override
 	protected void onStop() {
-		//changed from onPaused() to onStop()
+		//changed from onPause() to onStop()
 		//https://developer.android.com/guide/topics/ui/multi-window.html#lifecycle
 		//In multi-window mode, an app can be in the paused state and still be visible to the user.
 		if (visualizer != null && !visualizerPaused) {
@@ -564,7 +564,9 @@ public final class ActivityVisualizer extends Activity implements br.com.carlosr
 			Player.observer = null;
 		if (visualizerService != null)
 			visualizerService.pause();
-		Player.setActivityVisualizerInForeground(false);
+		//Apparently, onUserLeaveHint() does not work well when switching between apps from the navigation bar...
+		if (Player.isInteractive())
+			Player.setActivityVisualizerInForeground(false);
 		super.onStop();
 	}
 	
@@ -617,6 +619,7 @@ public final class ActivityVisualizer extends Activity implements br.com.carlosr
 	
 	@Override
 	protected void onDestroy() {
+		Player.setActivityVisualizerInForeground(false);
 		finalCleanup();
 		super.onDestroy();
 	}

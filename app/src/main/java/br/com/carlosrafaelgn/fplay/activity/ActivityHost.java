@@ -822,10 +822,10 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			System.gc();
 		}
 	}
-	
+
 	@Override
 	protected void onStop() {
-		//changed from onPaused() to onStop()
+		//changed from onPause() to onStop()
 		//https://developer.android.com/guide/topics/ui/multi-window.html#lifecycle
 		//In multi-window mode, an app can be in the paused state and still be visible to the user.
 		if (pendingTransitionView != null)
@@ -840,7 +840,9 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			top.onPause();
 		}
 		Player.backgroundMonitor = null;
-		Player.setActivityHostInForeground(false);
+		//Apparently, onUserLeaveHint() does not work well when switching between apps from the navigation bar...
+		if (Player.isInteractive())
+			Player.setActivityHostInForeground(false);
 		super.onStop();
 	}
 
@@ -903,6 +905,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 	
 	@Override
 	protected void onDestroy() {
+		Player.setActivityHostInForeground(false);
 		Player.removeDestroyedObserver(this);
 		finalCleanup();
 		super.onDestroy();
