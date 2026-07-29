@@ -564,13 +564,13 @@ public final class ActivityVisualizer extends Activity implements br.com.carlosr
 			Player.observer = null;
 		if (visualizerService != null)
 			visualizerService.pause();
-		Player.setAppNotInForeground(true);
+		Player.setActivityVisualizerInForeground(false);
 		super.onStop();
 	}
 	
 	@Override
 	protected void onResume() {
-		Player.setAppNotInForeground(false);
+		Player.setActivityVisualizerInForeground(true);
 		Player.observer = this;
 		if (visualizerService != null)
 			visualizerService.resetAndResume();

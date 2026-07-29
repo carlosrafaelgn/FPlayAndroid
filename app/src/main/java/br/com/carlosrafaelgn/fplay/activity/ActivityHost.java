@@ -840,7 +840,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 			top.onPause();
 		}
 		Player.backgroundMonitor = null;
-		Player.setAppNotInForeground(true);
+		Player.setActivityHostInForeground(false);
 		super.onStop();
 	}
 
@@ -852,7 +852,7 @@ public final class ActivityHost extends Activity implements Player.PlayerDestroy
 		}
 		UI.isAccessibilityManagerEnabled = (UI.accessibilityManager != null && UI.accessibilityManager.isEnabled());
 		Player.backgroundMonitor = this;
-		Player.setAppNotInForeground(false);
+		Player.setActivityHostInForeground(true);
 		if (UI.forcedLocale != UI.LOCALE_NONE)
 			UI.reapplyForcedLocale(this);
 		if (top != null && top.paused) {

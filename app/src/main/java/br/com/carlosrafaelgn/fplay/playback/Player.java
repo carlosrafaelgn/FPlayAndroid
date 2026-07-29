@@ -714,6 +714,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			}
 
 			songs.startDeserializingOrImportingFrom(null, true, false, false);
+
+			checkAppNotInForeground();
 		}
 	}
 
@@ -2362,7 +2364,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int OPT_FAVORITEFOLDER0 = 0x10000;
 
 	private static Notification notification;
-	private static boolean appNotInForeground, idleTurnOffTimerSent, notificationBroadcastPending;
+	private static boolean appNotInForeground, activityHostInForeground, activityVisualizerInForeground, idleTurnOffTimerSent, notificationBroadcastPending;
 	private static long turnOffTimerOrigin, idleTurnOffTimerOrigin, notificationLastUpdateTime;
 	private static HashSet<String> favoriteFolders;
 	private static PendingIntent intentActivityHost, intentPrevious, intentPlayPause, intentNext, intentExit;
@@ -3041,14 +3043,27 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return ((m <= 0) ? 1 : m);
 	}
 
-	public static void setAppNotInForeground(boolean appNotInForeground) {
+	private static void checkAppNotInForeground() {
 		if (state > STATE_ALIVE)
 			return;
+
+		final boolean appNotInForeground = (!activityHostInForeground && !activityVisualizerInForeground);
+
 		if (Player.appNotInForeground != appNotInForeground) {
 			Player.appNotInForeground = appNotInForeground;
 			if (idleTurnOffTimerSelectedMinutes > 0)
 				processIdleTurnOffTimer();
 		}
+	}
+
+	public static void setActivityHostInForeground(boolean activityHostInForeground) {
+		Player.activityHostInForeground = activityHostInForeground;
+		checkAppNotInForeground();
+	}
+
+	public static void setActivityVisualizerInForeground(boolean activityVisualizerInForeground) {
+		Player.activityVisualizerInForeground = activityVisualizerInForeground;
+		checkAppNotInForeground();
 	}
 
 	private static boolean isInCall() {
