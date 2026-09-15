@@ -2526,7 +2526,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			// https://developer.android.com/training/cars/media/enable-playback
 			// https://github.com/androidx/media/issues/2851
 			forceAutoIdleTurnOff = true;
-			if (idleTurnOffTimerSelectedMinutes < 2 || UI.lastVersionCode < 3000139)
+			if (idleTurnOffTimerSelectedMinutes < 1 || UI.lastVersionCode < 3000139)
 				idleTurnOffTimerSelectedMinutes = 2;
 			if (idleTurnOffTimerCustomMinutes <= 2)
 				idleTurnOffTimerCustomMinutes = 1;
