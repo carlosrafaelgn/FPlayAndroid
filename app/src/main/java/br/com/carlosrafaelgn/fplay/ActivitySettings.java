@@ -157,7 +157,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			UI.prepare(menu);
 			final int s = ((view == optAutoTurnOff) ? Player.turnOffTimerSelectedMinutes : Player.idleTurnOffTimerSelectedMinutes);
 			final int c = ((view == optAutoTurnOff) ? Player.turnOffTimerCustomMinutes : Player.idleTurnOffTimerCustomMinutes);
-			if (Player.forceAutoIdleTurnOff) {
+			if (Player.forceAutoIdleTurnOff && view == optAutoIdleTurnOff) {
 				menu.add(0, 2, 0, getMinuteString(2))
 					.setOnMenuItemClickListener(this)
 					.setIcon(new TextIconDrawable(s == 2 ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));

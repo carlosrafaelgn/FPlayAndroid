@@ -4,7 +4,7 @@ plugins {
 
 android {
 	namespace 'br.com.carlosrafaelgn.fplay'
-	compileSdk 35
+	compileSdk 36
 
 	defaultConfig {
 		applicationId "br.com.carlosrafaelgn.fplay"
