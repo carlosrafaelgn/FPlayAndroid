@@ -276,7 +276,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	@SuppressWarnings({"unused", "InstantiationOfUtilityClass"})
 	public static final ExternalFx theExternalFx = new ExternalFx();
 
-	public static boolean hasFocus, previousResetsAfterTheBeginning;
+	public static boolean hasFocus, previousResetsAfterTheBeginning, transientFocusLoss;
 	public static int volumeStreamMax = 15, volumeControlType;
 	private static boolean volumeDimmed;
 	private static int volumeDB, volumeDBFading, silenceMode;
@@ -698,6 +698,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					}
 					_fullCleanup();
 					hasFocus = false;
+					transientFocusLoss = false;
 					if (audioManager != null && thePlayer != null)
 						audioManager.abandonAudioFocus(thePlayer);
 					MediaContext._release();
@@ -1243,6 +1244,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 		localHandler.sendEmptyMessageAtTime(MSG_REGISTER_MEDIA_BUTTON_EVENT_RECEIVER, SystemClock.uptimeMillis());
 		hasFocus = true;
+		transientFocusLoss = false;
 		volumeDimmed = false;
 		return true;
 	}
@@ -1694,6 +1696,15 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 		resetHeadsetHook();
 		volumeDimmed = false;
+		switch (focusChange) {
+		case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+		case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+			transientFocusLoss = true;
+			break;
+		default:
+			transientFocusLoss = false;
+			break;
+		}
 		switch (focusChange) {
 		case AudioManager.AUDIOFOCUS_GAIN:
 			if (!hasFocus) {
@@ -3123,7 +3134,11 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			if (turnOffTimerObserver != null)
 				turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
 		} else {
-			if (idleTurnOffTimerOrigin > 0) {
+			if (transientFocusLoss && resumePlaybackAfterFocusGain) {
+				//reset the timer because we are likely to resume playback anytime soon...
+				idleTurnOffTimerOrigin = 0;
+				sendMessage = true;
+			} else if (idleTurnOffTimerOrigin > 0) {
 				final int secondsLeft = (idleTurnOffTimerSelectedMinutes * 60) - (int)((SystemClock.elapsedRealtime() - idleTurnOffTimerOrigin) / 1000);
 				if (turnOffTimerObserver != null)
 					turnOffTimerObserver.onPlayerIdleTurnOffTimerTick();
