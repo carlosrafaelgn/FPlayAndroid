@@ -1292,7 +1292,9 @@ public final class HttpStreamReceiver implements Runnable {
 						//let's try to fill up the buffer for a while before decoding again
 						//(as if we had just started playing for the first time)
 						buffering = true;
-						bufferingCounter = buffer.getFilledSize();
+						//bufferingCounter must be treated as the amount of bytes written to the buffer but
+						//not committed yet (the bytes already committed must not be committed again)
+						bufferingCounter = 0;
 						//on API's 10..15, we are just acting as a server for MediaPlayer class...
 						//and it consumes data REALLY fast, emptying the buffer too often!!!
 						if ((pendingBufferingMessage = isPerformingFullPlayback)) {
@@ -1313,7 +1315,9 @@ public final class HttpStreamReceiver implements Runnable {
 					//before notifying the server for the first time, let's wait for the buffer to fill up
 					if (bufferingCounter >= 0) {
 						bufferingCounter += len;
-						if (bufferingCounter >= initialNetworkBufferLengthInBytes) {
+						//the bytes that are still waiting to be consumed also count towards the amount
+						//required to resume decoding (the consumer might be draining them meanwhile)
+						if ((buffer.getFilledSize() + bufferingCounter) >= initialNetworkBufferLengthInBytes) {
 							if (buffering) {
 								buffering = false;
 								if (pendingBufferingMessage) {
