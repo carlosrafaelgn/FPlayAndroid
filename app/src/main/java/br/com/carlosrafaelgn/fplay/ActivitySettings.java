@@ -103,7 +103,9 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	private LinearLayout panelSettings;
 	private ViewGroup viewForPadding;
 	private SettingView firstViewAdded, lastViewAdded, optLoadCurrentTheme, optUseAlternateTypeface,
-		optAutoTurnOff, optAutoIdleTurnOff, optReadPhoneState, optBluetoothConnect, optAutoTurnOffPlaylist, optKeepScreenOn, optTheme, optFlat, optRGB,
+		optAutoTurnOff, optAutoIdleTurnOff,
+		//optReadPhoneState, // Removing this in favor of transient audio focus losses (refer to Player.isInCall())
+		optBluetoothConnect, optAutoTurnOffPlaylist, optKeepScreenOn, optTheme, optFlat, optRGB,
 		optBorders, optPlayWithLongPress, optExpandSeekBar, optVolumeControlType, optDoNotAttenuateVolume,
 		opt3D, optIsDividerVisible, optIsVerticalMarginLarge, optExtraSpacing, optPlaceTitleAtTheBottom,
 		optForcedLocale, optPlacePlaylistToTheRight, optScrollBarToTheLeft, optScrollBarSongList,
@@ -1266,8 +1268,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				optUseAlternateTypeface = new SettingView(ctx, UI.ICON_DYSLEXIA, getText(R.string.opt_use_alternate_typeface).toString(), null, true, UI.isUsingAlternateTypeface, false);
 			optAutoTurnOff = new SettingView(ctx, UI.ICON_CLOCK, getText(R.string.opt_auto_turn_off).toString(), getAutoTurnOffString(), false, false, false);
 			optAutoIdleTurnOff = new SettingView(ctx, UI.ICON_CLOCK, getText(R.string.opt_auto_idle_turn_off).toString(), getAutoIdleTurnOffString(), false, false, false);
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-				optReadPhoneState = new SettingView(ctx, UI.ICON_DIAL, getText(R.string.opt_read_phone_state).toString(), null, true, ctx.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED, false);
+			//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+			//	optReadPhoneState = new SettingView(ctx, UI.ICON_DIAL, getText(R.string.opt_read_phone_state).toString(), null, true, ctx.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED, false);
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
 				optBluetoothConnect = new SettingView(ctx, UI.ICON_BLUETOOTH, getText(R.string.opt_bluetooth_connect).toString(), null, true, ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED, false);
 			optAutoTurnOffPlaylist = new SettingView(ctx, UI.ICON_REPEATNONE, getText(R.string.opt_auto_turn_off_playlist).toString(), null, true, Player.turnOffWhenPlaylistEnds, false);
@@ -1355,8 +1357,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			}
 			addOption(optAutoTurnOff);
 			addOption(optAutoIdleTurnOff);
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-				addOption(optReadPhoneState);
+			//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+			//	addOption(optReadPhoneState);
 			addOption(optAutoTurnOffPlaylist);
 			if (BuildConfig.X) {
 				addHeader(ctx, R.string.performance, optAutoTurnOffPlaylist, hIdx++);
@@ -1480,8 +1482,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 				optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
 			if (optAutoIdleTurnOff != null)
 				optAutoIdleTurnOff.setSecondaryText(getAutoIdleTurnOffString());
-			if (optReadPhoneState != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-				optReadPhoneState.setChecked(getHostActivity().checkSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED);
+			//if (optReadPhoneState != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+			//	optReadPhoneState.setChecked(getHostActivity().checkSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED);
 			if (optBluetoothConnect != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
 				optBluetoothConnect.setChecked(getHostActivity().checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED);
 		}
@@ -1511,7 +1513,7 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 		optUseAlternateTypeface = null;
 		optAutoTurnOff = null;
 		optAutoIdleTurnOff = null;
-		optReadPhoneState = null;
+		//optReadPhoneState = null;
 		optBluetoothConnect = null;
 		optAutoTurnOffPlaylist = null;
 		optKeepScreenOn = null;
@@ -1895,19 +1897,19 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			lastMenuView = null;
 			CustomContextMenu.openContextMenu(view, this);
 			return;
-		} else if (view == optReadPhoneState) {
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-				if (getHostActivity().checkSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
-					optReadPhoneState.setChecked(true);
-					final Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-					intent.setData(Uri.fromParts("package", getHostActivity().getPackageName(), null));
-					getHostActivity().startActivity(intent);
-				} else {
-					optReadPhoneState.setChecked(false);
-					getHostActivity().requestPermissions(new String[]{Manifest.permission.READ_PHONE_STATE}, 1);
-				}
-			}
-			return;
+		//} else if (view == optReadPhoneState) {
+		//	if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+		//		if (getHostActivity().checkSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
+		//			optReadPhoneState.setChecked(true);
+		//			final Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+		//			intent.setData(Uri.fromParts("package", getHostActivity().getPackageName(), null));
+		//			getHostActivity().startActivity(intent);
+		//		} else {
+		//			optReadPhoneState.setChecked(false);
+		//			getHostActivity().requestPermissions(new String[]{Manifest.permission.READ_PHONE_STATE}, 1);
+		//		}
+		//	}
+		//	return;
 		} else if (view == optBluetoothConnect) {
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
 				if (getHostActivity().checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
@@ -1929,8 +1931,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 	@Override
 	public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
 		if (requestCode == 1) {
-			if (optReadPhoneState != null && grantResults != null && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
-				optReadPhoneState.setChecked(true);
+		//	if (optReadPhoneState != null && grantResults != null && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+		//		optReadPhoneState.setChecked(true);
 		} else if (requestCode == 2) {
 			if (optBluetoothConnect != null && grantResults != null && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
 				optBluetoothConnect.setChecked(true);

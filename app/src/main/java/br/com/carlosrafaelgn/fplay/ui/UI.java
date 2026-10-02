@@ -1843,7 +1843,7 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			//"\n\n" +
 			context.getText(R.string.there_are_new_features) +
 			((Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ? ("\n\n- " + context.getText(R.string.bluetooth) + collon() + context.getText(R.string.opt_bluetooth_connect)) : "") +
-			((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ? ("\n\n- " + context.getText(R.string.msg_turn_off_title) + collon() + context.getText(R.string.opt_read_phone_state)) : "") +
+			//((Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ? ("\n\n- " + context.getText(R.string.msg_turn_off_title) + collon() + context.getText(R.string.opt_read_phone_state)) : "") +
 			"\n\n- " + context.getText(R.string.hdr_display) + collon() + "RGB" +
 			"\n\n- " + context.getText(R.string.hdr_display) + collon() + context.getText(R.string.night_mode) +
 			"\n\n- " + context.getText(R.string.hdr_display) + collon() + context.getText(R.string.album_art) +

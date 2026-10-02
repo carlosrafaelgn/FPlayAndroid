@@ -70,7 +70,7 @@ import android.os.Message;
 import android.os.PowerManager;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
-import android.telecom.TelecomManager;
+//import android.telecom.TelecomManager;
 import android.telephony.TelephonyManager;
 import android.text.format.Formatter;
 import android.util.Base64;
@@ -3094,13 +3094,25 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		// https://developer.android.com/reference/android/telephony/TelephonyManager#getCallState()
 		if (telephonyManager != null) {
 			try {
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && thePlayer.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED)
-						return false;
-					return ((TelecomManager)telephonyManager).isInCall();
-				} else if (((TelephonyManager)telephonyManager).getCallState() != TelephonyManager.CALL_STATE_IDLE) {
-					return true;
-				}
+				// Apparently, TelecomManager.getCallState() started requiring the READ_PHONE_STATE
+				// permission in API 31. So, given that it was possible to prevent the player from
+				// automatically shutting down during a call ended, just by tracking transient audio
+				// focus losses, I decided to completely ignore the call state on API 31 onwards.
+				// https://stackoverflow.com/q/68926581/3569421
+
+				//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+				//	if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && thePlayer.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED)
+				//		return false;
+				//	return ((TelecomManager)telephonyManager).isInCall();
+				//} else if (((TelephonyManager)telephonyManager).getCallState() != TelephonyManager.CALL_STATE_IDLE) {
+				//	return true;
+				//}
+
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+					return false;
+
+				//noinspection deprecation
+				return (((TelephonyManager)telephonyManager).getCallState() != TelephonyManager.CALL_STATE_IDLE);
 			} catch (Throwable ex) {
 				ex.printStackTrace();
 			}

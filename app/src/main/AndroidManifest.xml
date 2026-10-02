@@ -44,7 +44,10 @@
     -->
     <uses-permission android:name="android.permission.WRITE_SETTINGS" />
     <!-- Used by TelephonyManager.getCallState() and TelecomManager.isInCall() -->
+    <!--
+        Refer to Player.isInCall()
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    -->
 
     <!-- These three permissions are not classified as PROTECTION_NORMAL in Android M API 23
      https://developer.android.com/guide/topics/security/permissions.html#normal-dangerous -->
