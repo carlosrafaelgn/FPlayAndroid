@@ -177,10 +177,14 @@ final class MediaCodecPlayer extends MediaPlayerBase implements Handler.Callback
 			return false;
 		}
 		while (!inputOver) {
+			//we must check whether there is a frame available before dequeuing an input buffer,
+			//because a dequeued buffer that is never queued is lost forever, and after losing
+			//them all, the decoder would starve and playback would stall (unlike the
+			//HttpStreamReceiver loop, here we cannot block waiting for the next frame)
 			final int inputFrameSize, index;
-			if ((index = mediaCodec.dequeueInputBuffer(INPUT_BUFFER_TIMEOUT_IN_US)) < 0)
-				break;
 			if ((inputFrameSize = httpStreamExtractor.canReadHeader()) < 0)
+				break;
+			if ((index = mediaCodec.dequeueInputBuffer(INPUT_BUFFER_TIMEOUT_IN_US)) < 0)
 				break;
 			if (inputFrameSize == 0) {
 				inputOver = true;
