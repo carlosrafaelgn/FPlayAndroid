@@ -103,7 +103,7 @@ public final class HttpStreamReceiver implements Runnable {
 	private long contentLength;
 	private int icyBitRate, icyMetaInterval, currentChunkLen, currentChunkState;
 	private byte[] tempChunkData;
-	private ByteBuffer tempChunkBuffer;
+	private ByteBuffer tempChunkBuffer, leftoverBuffer;
 	private Handler handler;
 	private Thread clientThread, serverThread;
 	private SocketWrapper clientSocket;
@@ -890,7 +890,18 @@ public final class HttpStreamReceiver implements Runnable {
 							}
 							//leave both buffers prepared before leaving
 							final int leftovers = buffer.writeBuffer.remaining();
-							buffer.readBuffer.position(buffer.writeBuffer.position());
+							final int leftoversPosition = buffer.writeBuffer.position();
+							buffer.readBuffer.position(leftoversPosition);
+							if (chunked && leftovers > 0) {
+								//the leftovers still contain chunk framing (sizes and \r\n), so they cannot
+								//be handed over as audio: keep them aside, and let clientSocketRead()
+								//consume them through the chunk state machine before reading the socket
+								final byte[] data = new byte[leftovers];
+								buffer.writeBuffer.get(data, 0, leftovers);
+								buffer.writeBuffer.position(leftoversPosition);
+								leftoverBuffer = ByteBuffer.wrap(data);
+								return 0;
+							}
 							buffer.writeBuffer.position(buffer.writeBuffer.limit());
 							return leftovers;
 						}
@@ -914,6 +925,7 @@ public final class HttpStreamReceiver implements Runnable {
 							chunked = false;
 							tempChunkData = null;
 							tempChunkBuffer = null;
+							leftoverBuffer = null;
 							switch (line.charAt(lineLen + 1)) {
 							case '2':
 								break;
@@ -1088,6 +1100,23 @@ public final class HttpStreamReceiver implements Runnable {
 		}
 	}
 
+	private int rawClientSocketRead(ByteBuffer dst) throws IOException {
+		//serve the bytes that arrived together with the response header (if any) first
+		final ByteBuffer leftovers = leftoverBuffer;
+		if (leftovers != null) {
+			if (leftovers.hasRemaining()) {
+				final int len = Math.min(leftovers.remaining(), dst.remaining());
+				final int oldLimit = leftovers.limit();
+				leftovers.limit(leftovers.position() + len);
+				dst.put(leftovers);
+				leftovers.limit(oldLimit);
+				return len;
+			}
+			leftoverBuffer = null;
+		}
+		return clientSocket.read(dst);
+	}
+
 	private int clientSocketRead(ByteBuffer dst) throws IOException {
 		if (!chunked)
 			return clientSocket.read(dst);
@@ -1100,7 +1129,7 @@ public final class HttpStreamReceiver implements Runnable {
 				//actual data
 				oldLimit = dst.limit();
 				dst.limit(dst.position() + Math.min(currentChunkLen, dst.remaining()));
-				if ((len = clientSocket.read(dst)) < 0) {
+				if ((len = rawClientSocketRead(dst)) < 0) {
 					dst.limit(oldLimit);
 					return -1;
 				}
@@ -1114,9 +1143,16 @@ public final class HttpStreamReceiver implements Runnable {
 			tempChunkBuffer.limit(1);
 			tempChunkBuffer.position(0);
 
-			if ((len = clientSocket.read(tempChunkBuffer)) > 0) {
+			if ((len = rawClientSocketRead(tempChunkBuffer)) < 0)
+				return -1;
+
+			if (len > 0) {
 				switch (currentChunkState) {
 				case 0: //read chunk size in hex + \r
+				case 5: //skip chunk extension up to the \r
+					//a chunk extension, such as "1000;name=value\r\n", comes right after the size
+					//and before the \r\n, and must be ignored (in state 5 everything but the line
+					//break is discarded, otherwise the ';' would be taken as an invalid hex digit)
 					switch ((b = tempChunkData[0])) {
 					case '\r':
 						//the last chunk was the last one!
@@ -1130,7 +1166,16 @@ public final class HttpStreamReceiver implements Runnable {
 							return -1;
 						currentChunkState = 2;
 						break;
+					case ' ':
+						//white spaces are allowed between the size and the extension (e.g. "1000 ;name=value")
+						//so, do not change current state, just ignore the space
+						break;
+					case ';':
+						currentChunkState = 5;
+						break;
 					default:
+						if (currentChunkState == 5)
+							break;
 						if (b >= '0' && b <= '9')
 							currentChunkLen = (currentChunkLen << 4) | (b - '0');
 						else if (b >= 'a' && b <= 'f')
