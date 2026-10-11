@@ -2384,7 +2384,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static PendingIntent intentActivityHost, intentPrevious, intentPlayPause, intentNext, intentExit;
 	private static int headsetHookActions, headsetHookPressCount, telephonyFeatureState;
 	public static String path, originalPath, radioSearchTerm;
-	public static boolean lastRadioSearchWasByGenre, nextPreparationEnabled, doNotAttenuateVolume, clearListWhenPlayingFolders, controlMode, bassBoostMode, handleCallKey, playWhenHeadsetPlugged, goBackWhenPlayingFolders, turnOffWhenPlaylistEnds, followCurrentSong, announceCurrentSong, forceAutoIdleTurnOff;
+	public static boolean lastRadioSearchWasByGenre, nextPreparationEnabled, doNotAttenuateVolume, clearListWhenPlayingFolders, controlMode, bassBoostMode, handleCallKey, playWhenHeadsetPlugged, goBackWhenPlayingFolders, turnOffWhenPlaylistEnds, followCurrentSong, announceCurrentSong; //, forceAutoIdleTurnOff;
 	public static int radioLastGenre, radioLastGenreShoutcast, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther, turnOffTimerCustomMinutes, turnOffTimerSelectedMinutes, idleTurnOffTimerCustomMinutes, idleTurnOffTimerSelectedMinutes, filePrefetchSize;
 	public static Object radioStationCache, radioStationCacheShoutcast;
 
@@ -2536,11 +2536,33 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			// https://developer.android.com/media/media3/session/background-playback
 			// https://developer.android.com/training/cars/media/enable-playback
 			// https://github.com/androidx/media/issues/2851
-			forceAutoIdleTurnOff = true;
-			if (idleTurnOffTimerSelectedMinutes < 1 || UI.lastVersionCode < 3000139)
+			//
+			// After a couple of tests, I noticed the behavior of eagerly destroying
+			// the idle notification depends heavily on the maker...
+			//
+			//forceAutoIdleTurnOff = true;
+			//if (idleTurnOffTimerSelectedMinutes < 1 || UI.lastVersionCode < 3000139)
+			//	idleTurnOffTimerSelectedMinutes = 2;
+			//if (idleTurnOffTimerCustomMinutes < 1)
+			//	idleTurnOffTimerCustomMinutes = 2;
+			if (UI.lastVersionCode < 3000139)
 				idleTurnOffTimerSelectedMinutes = 2;
-			if (idleTurnOffTimerCustomMinutes <= 2)
-				idleTurnOffTimerCustomMinutes = 1;
+		}
+
+		switch (turnOffTimerCustomMinutes) {
+		case 2:
+		case 5:
+		case 10:
+			turnOffTimerCustomMinutes = 30;
+			break;
+		}
+
+		switch (idleTurnOffTimerCustomMinutes) {
+		case 2:
+		case 5:
+		case 10:
+			idleTurnOffTimerCustomMinutes = 30;
+			break;
 		}
 
 		int count = opts.getInt(OPT_FAVORITEFOLDERCOUNT);
@@ -3035,8 +3057,18 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (state > STATE_ALIVE)
 			return;
 		if (minutes > 0) {
-			if (minutes != 60 && minutes != 90 && minutes != 120)
+			switch (minutes) {
+			case 2:
+			case 5:
+			case 10:
+			case 60:
+			case 90:
+			case 120:
+				break;
+			default:
 				turnOffTimerCustomMinutes = minutes;
+				break;
+			}
 			//we must use SystemClock.elapsedRealtime because uptimeMillis
 			//does not take sleep time into account (and the user makes no
 			//difference between the time spent during sleep and the one
@@ -3185,13 +3217,25 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		idleTurnOffTimerSent = false;
 		localHandler.removeMessages(MSG_IDLE_TURN_OFF_TIMER);
 		if (minutes > 0) {
-			if (forceAutoIdleTurnOff) {
-				if (minutes != 2 && minutes != 60 && minutes != 90 && minutes != 120)
-					idleTurnOffTimerCustomMinutes = minutes;
-			} else {
-				if (minutes != 60 && minutes != 90 && minutes != 120)
-					idleTurnOffTimerCustomMinutes = minutes;
+			switch (minutes) {
+			case 2:
+			case 5:
+			case 10:
+			case 60:
+			case 90:
+			case 120:
+				break;
+			default:
+				idleTurnOffTimerCustomMinutes = minutes;
+				break;
 			}
+			//if (forceAutoIdleTurnOff) {
+			//	if (minutes != 2 && minutes != 60 && minutes != 90 && minutes != 120)
+			//		idleTurnOffTimerCustomMinutes = minutes;
+			//} else {
+			//	if (minutes != 60 && minutes != 90 && minutes != 120)
+			//		idleTurnOffTimerCustomMinutes = minutes;
+			//}
 			idleTurnOffTimerSelectedMinutes = minutes;
 			processIdleTurnOffTimer();
 		} else {

@@ -159,33 +159,43 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 			UI.prepare(menu);
 			final int s = ((view == optAutoTurnOff) ? Player.turnOffTimerSelectedMinutes : Player.idleTurnOffTimerSelectedMinutes);
 			final int c = ((view == optAutoTurnOff) ? Player.turnOffTimerCustomMinutes : Player.idleTurnOffTimerCustomMinutes);
-			if (Player.forceAutoIdleTurnOff && view == optAutoIdleTurnOff) {
-				menu.add(0, 2, 0, getMinuteString(2))
-					.setOnMenuItemClickListener(this)
-					.setIcon(new TextIconDrawable(s == 2 ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
-			} else {
+			//if (Player.forceAutoIdleTurnOff && view == optAutoIdleTurnOff) {
+			//	menu.add(0, 2, 0, getMinuteString(2))
+			//		.setOnMenuItemClickListener(this)
+			//		.setIcon(new TextIconDrawable(s == 2 ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
+			//} else {
 				menu.add(0, 0, 0, R.string.never)
 					.setOnMenuItemClickListener(this)
 					.setIcon(new TextIconDrawable(s <= 0 ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
-			}
+			//}
 			UI.separator(menu, 0, 1);
 			menu.add(1, c, 0, getMinuteString(c))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable(s == c ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 			UI.separator(menu, 1, 1);
-			menu.add(2, 60, 0, getMinuteString(60))
+			menu.add(2, 2, 0, getMinuteString(2))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(s == 2 ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
+			menu.add(2, 5, 1, getMinuteString(5))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(s == 5 ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
+			menu.add(2, 10, 2, getMinuteString(10))
+				.setOnMenuItemClickListener(this)
+				.setIcon(new TextIconDrawable(s == 10 ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
+			menu.add(2, 60, 3, getMinuteString(60))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable(s == 60 ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
-			menu.add(2, 90, 1, getMinuteString(90))
+			menu.add(2, 90, 4, getMinuteString(90))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable(s == 90 ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
-			menu.add(2, 120, 2, getMinuteString(120))
+			menu.add(2, 120, 5, getMinuteString(120))
 				.setOnMenuItemClickListener(this)
 				.setIcon(new TextIconDrawable(s == 120 ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
-			UI.separator(menu, 2, 4);
+			UI.separator(menu, 2, 6);
 			menu.add(3, -2, 0, R.string.custom)
 				.setOnMenuItemClickListener(this)
-				.setIcon(new TextIconDrawable(!(Player.forceAutoIdleTurnOff && s == 2) && s != c && s != 60 && s != 90 && s != 120 && s > 0 ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
+				//.setIcon(new TextIconDrawable(!(Player.forceAutoIdleTurnOff && s == 2) && s != c && s != 60 && s != 90 && s != 120 && s > 0 ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
+				.setIcon(new TextIconDrawable(s != c && s != 2 && s != 5 && s != 10 && s != 60 && s != 90 && s != 120 && s > 0 ? UI.ICON_RADIOCHK24 : UI.ICON_RADIOUNCHK24));
 		} else if (view == optForcedLocale) {
 			final int o = UI.forcedLocale;
 			lastMenuView = optForcedLocale;
@@ -1959,8 +1969,8 @@ public final class ActivitySettings extends ClientActivity implements Player.Pla
 						Player.setTurnOffTimer(m);
 						optAutoTurnOff.setSecondaryText(getAutoTurnOffString());
 					} else {
-						if (Player.forceAutoIdleTurnOff && m < 1)
-							m = 1;
+						//if (Player.forceAutoIdleTurnOff && m < 1)
+						//	m = 1;
 						Player.setIdleTurnOffTimer(m);
 						optAutoIdleTurnOff.setSecondaryText(getAutoIdleTurnOffString());
 					}
