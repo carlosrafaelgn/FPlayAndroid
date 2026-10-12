@@ -81,6 +81,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.text.Normalizer;
 import java.util.HashSet;
 import java.util.Locale;
 
@@ -102,6 +103,7 @@ import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
+import br.com.carlosrafaelgn.fplay.util.TextNormalizer;
 import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 
 //
@@ -235,6 +237,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int SILENCE_NORMAL = 0;
 	private static final int SILENCE_FOCUS = 1;
 	private static final int SILENCE_NONE = -1;
+
+	private static final int NOTIFICATION_MAX_STRING_LENGTH = 300;
 
 	public static final String CHANNEL_GROUP_ID = "fplayg";
 	public static final String CHANNEL_ID = "fplay";
@@ -2070,16 +2074,14 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				title = title.replace("\\'", "'");
 			if (title.length() > 0) {
 				//****** NEVER update the song's path! we need the original title in order to be able to resolve it again, later!
-				if (metadata.icyName != null && metadata.icyName.length() > 0) {
-					localSong.artist = metadata.icyName;
-					localSong.extraInfo = metadata.icyName;
-				}
+				if (metadata.icyName != null && metadata.icyName.length() > 0)
+					localSong.artist = Normalizer.normalize(metadata.icyName, Normalizer.Form.NFC).trim();
 				if (metadata.icyUrl != null && metadata.icyUrl.length() > 0)
 					localSong.album = metadata.icyUrl;
-				localSong.title = title;
+				localSong.title = Normalizer.normalize(title, Normalizer.Form.NFC).trim();
+				localSong.updateExtraInfo();
 				localSong.invalidateNormalizedMetadata();
-				// No longer use "Loading..." for notification, media session and so on...
-				broadcastStateChange(getCurrentTitle(false), isPreparing(), true);
+				refreshNotification();
 				//this will force a serialization when closing the app (saving this update)
 				songs.markAsChanged();
 				if (observer != null)
@@ -2089,15 +2091,14 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			final MetadataExtractor metadata = (MetadataExtractor)extraObject;
 			if (metadata.hasData) {
 				//****** NEVER update the song's path! we need the original title in order to be able to resolve it again, later!
-				if (metadata.artist != null && metadata.artist.length() > 0) {
-					localSong.artist = metadata.artist;
-					localSong.extraInfo = metadata.artist;
-				}
+				if (metadata.artist != null && metadata.artist.length() > 0)
+					localSong.artist = Normalizer.normalize(metadata.artist, Normalizer.Form.NFC).trim();
 				//Do not touch the album, as it might already contain the track's icy url
 				//localSong.album = "-";
-				localSong.title = metadata.title;
-				// No longer use "Loading..." for notification, media session and so on...
-				broadcastStateChange(getCurrentTitle(false), isPreparing(), true);
+				localSong.title = Normalizer.normalize(metadata.title, Normalizer.Form.NFC).trim();
+				localSong.updateExtraInfo();
+				localSong.invalidateNormalizedMetadata();
+				refreshNotification();
 				//this will force a serialization when closing the app (saving this update)
 				songs.markAsChanged();
 				if (observer != null)
@@ -2738,7 +2739,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		createIntents();
 
 		// No longer use "Loading..." for notification, media session and so on...
-		views.setTextViewText(R.id.lblTitle, getCurrentTitle(false));
+		views.setTextViewText(R.id.lblTitle, UI.ellipsizeText(getCurrentTitle(false), NOTIFICATION_MAX_STRING_LENGTH));
 
 		if (prepareButtons) {
 			if (notification) {
@@ -2759,7 +2760,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				if (localSong == null)
 					views.setTextViewText(R.id.lblArtist, "-");
 				else
-					views.setTextViewText(R.id.lblArtist, localSong.extraInfo);
+					views.setTextViewText(R.id.lblArtist, UI.ellipsizeText(localSong.extraInfo, NOTIFICATION_MAX_STRING_LENGTH));
 
 				views.setTextColor(R.id.lblTitle, UI.widgetTextColor);
 				views.setTextColor(R.id.lblArtist, UI.widgetTextColor);
@@ -2793,8 +2794,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			.setWhen(0)
 			.setStyle(mediaStyle)
 			// No longer use "Loading..." for notification, media session and so on...
-			.setContentTitle(getCurrentTitle(false))
-			.setSubText((localSong == null) ? "-" : localSong.extraInfo)
+			.setContentTitle(UI.ellipsizeText(getCurrentTitle(false), NOTIFICATION_MAX_STRING_LENGTH))
+			.setSubText((localSong == null) ? "-" : UI.ellipsizeText(localSong.extraInfo, NOTIFICATION_MAX_STRING_LENGTH))
 			.setColorized(false)
 			// Apparently, the ongoing flag should be set to false for the delete intent to the send
 			// https://stackoverflow.com/q/74808095/3569421
@@ -4012,12 +4013,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	}
 
 	public static void refreshNotification() {
-		try {
-			notificationManager.notify(NOTIFICATION_ID, getNotification());
-		} catch (Throwable ex) {
-			//why the *rare* android.os.TransactionTooLargeException?
-			//what to do?!?!
-		}
+		// No longer use "Loading..." for notification, media session and so on...
+		broadcastStateChange(getCurrentTitle(false), isPreparing(), true);
 	}
 
 	@SuppressWarnings("deprecation")
@@ -4044,14 +4041,19 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				handler.sendMessageAtTime(Message.obtain(handler, MSG_UPDATE_STATE), now + 2000);
 		} else {
 			final long delta = now - notificationLastUpdateTime;
-			if (delta < 100) {
+			if (delta < 200) {
 				notificationBroadcastPending = true;
-				localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_BROADCAST_STATE_CHANGE, (preparing ? 0x01 : 0) | (titleOrSongHaveChanged ? 0x02 : 0), 0, title), notificationLastUpdateTime + 110);
+				localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_BROADCAST_STATE_CHANGE, (preparing ? 0x01 : 0) | (titleOrSongHaveChanged ? 0x02 : 0), 0, title), notificationLastUpdateTime + 210);
 				return;
 			}
 		}
 		notificationLastUpdateTime = now;
-		refreshNotification();
+		try {
+			notificationManager.notify(NOTIFICATION_ID, getNotification());
+		} catch (Throwable ex) {
+			//why the *rare* android.os.TransactionTooLargeException?
+			//what to do?!?!
+		}
 		WidgetMain.updateWidgets();
 		//
 		//perhaps, one day we should implement RemoteControlClient for better Bluetooth support...?

@@ -40,6 +40,7 @@ import android.support.annotation.NonNull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.Normalizer;
 
 import br.com.carlosrafaelgn.fplay.playback.MetadataExtractor;
 import br.com.carlosrafaelgn.fplay.playback.Player;
@@ -110,7 +111,7 @@ public final class Song extends BaseItem {
 	public Song(String url, String title) {
 		this.path = url.trim();
 		this.isHttp = true;
-		this.title = title.trim();
+		this.title = Normalizer.normalize(title, Normalizer.Form.NFC).trim();
 		this.artist = this.title;
 		validateFields(null);
 	}
@@ -210,6 +211,16 @@ public final class Song extends BaseItem {
 				ex.printStackTrace();
 			}
 		}
+
+		if (this.title != null)
+			this.title = Normalizer.normalize(this.title, Normalizer.Form.NFC).trim();
+		if (this.artist != null)
+			this.artist = Normalizer.normalize(this.artist, Normalizer.Form.NFC).trim();
+		if (this.album != null)
+			this.album = Normalizer.normalize(this.album, Normalizer.Form.NFC).trim();
+		if (this.extraInfo != null)
+			this.extraInfo = Normalizer.normalize(this.extraInfo, Normalizer.Form.NFC).trim();
+
 		validateFields(fileSt.name);
 	}
 

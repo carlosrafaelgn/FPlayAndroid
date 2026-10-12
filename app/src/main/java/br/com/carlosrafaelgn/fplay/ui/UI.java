@@ -1893,7 +1893,20 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 		textPaint.setTextSize(size);
 		return TextUtils.ellipsize(text, textPaint, width, truncateAtMiddle ? TruncateAt.MIDDLE : TruncateAt.END).toString();
 	}
-	
+
+	public static String ellipsizeText(String text, int maxLength) {
+		//this is not a complete/complex solution as this one but...
+		//https://adam-p.ca/blog/2025/04/string-length
+		if (text == null)
+			return "";
+		if (text.length() <= maxLength)
+			return text;
+		//make room for the … at the end
+		maxLength--;
+		//just try not to split a surrogate pair
+		return text.substring(0, Character.isHighSurrogate(text.charAt(maxLength - 1)) ? (maxLength - 1) : maxLength) + "…";
+	}
+
 	public static int measureText(String text, int size) {
 		if (text == null)
 			return 0;
