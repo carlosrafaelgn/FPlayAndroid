@@ -68,6 +68,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 	private int textX, currentX, leftMargin, rightMargin, rightMarginForDrawing;
 
 	private static int albumArtHeight, height, titleY, lengthY, artistY, extraY, currentY, topMargin,
+		httpTitleY, httpExtraY,
 		numberAndCountColor, numberAndCountColorSelected, numberAndCountColorFocused, titlesp;
 
 	public static int getViewHeight() {
@@ -95,6 +96,8 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		lengthY = UI.verticalMargin + UI._14spYinBox + topMargin;
 		extraY = UI.verticalMargin + UI._1dp + titlespBox + UI._14spYinBox + topMargin;
 		currentY = height - UI.defaultControlContentsSize - UI.controlXtraSmallMargin - bottomMargin;
+		httpTitleY = titleY;
+		httpExtraY = extraY;
 
 		if (Song.extraInfoMode == Song.EXTRA_TRACK_ARTIST_ALBUM) {
 			// Used with Song.extraInfoMode == Song.EXTRA_TRACK_ARTIST_ALBUM
@@ -119,6 +122,8 @@ public final class SongView extends View implements View.OnClickListener, View.O
 			lengthY = titleY;
 			artistY = top3 + titlespBox + space3 + UI._14spYinBox;
 			extraY = top3 + titlespBox + space3 + UI._14spBox + space3 + UI._14spYinBox;
+			httpTitleY = ((height - (titlespBox + UI._1dp + UI._14spBox)) >> 1) + titlespYinBox;
+			httpExtraY = httpTitleY + UI._1dp + titlespBox;
 		}
 
 		//iconLeftPadding = leftMargin + ((albumArtHeight - UI.defaultControlContentsSize) >> 1);
@@ -349,14 +354,17 @@ public final class SongView extends View implements View.OnClickListener, View.O
 			TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, currentX, currentY, UI.defaultControlContentsSize, ((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
 		else if (numberAndCount != null)
 			UI.drawText(canvas, numberAndCount, ((state & ~UI.STATE_CURRENT) == 0) ? numberAndCountColor : (((state & UI.STATE_FOCUSED) != 0 && (state & UI.STATE_HOVERED) == 0) ? numberAndCountColorFocused : numberAndCountColorSelected), UI._14sp, numberAndCountX, extraY);
-		UI.drawText(canvas, ellipsizedTitle, txtColor, titlesp, textX, titleY);
-		if (song.isHttp)
+		if (song.isHttp) {
+			UI.drawText(canvas, ellipsizedTitle, txtColor, titlesp, textX, httpTitleY);
 			TextIconDrawable.drawIcon(canvas, UI.ICON_RADIO, lengthX, UI.verticalMargin + topMargin, UI._14spBox, txtColor);
-		else
+			UI.drawText(canvas, ellipsizedExtraInfo, txtColor, UI._14sp, textX, httpExtraY);
+		} else {
+			UI.drawText(canvas, ellipsizedTitle, txtColor, titlesp, textX, titleY);
 			UI.drawText(canvas, song.length, txtColor, UI._14sp, lengthX, lengthY);
-		if (ellipsizedArtist3 != null)
-			UI.drawText(canvas, ellipsizedArtist3, txtColor, UI._14sp, textX, artistY);
-		UI.drawText(canvas, ellipsizedExtraInfo, txtColor, UI._14sp, textX, extraY);
+			if (ellipsizedArtist3 != null)
+				UI.drawText(canvas, ellipsizedArtist3, txtColor, UI._14sp, textX, artistY);
+			UI.drawText(canvas, ellipsizedExtraInfo, txtColor, UI._14sp, textX, extraY);
+		}
 	}
 
 	@Override
