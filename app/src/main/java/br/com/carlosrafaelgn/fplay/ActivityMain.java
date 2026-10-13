@@ -726,6 +726,10 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 
 	@Override
 	public void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex) {
+		onPlayerChanged(currentSong, songHasChanged, preparingHasChanged, false, ex);
+	}
+
+	public void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, boolean skipBringingCurrentIntoView, Throwable ex) {
 		final String icon = (Player.localPlaying ? UI.ICON_PAUSE : UI.ICON_PLAY);
 		if (btnPlay != null) {
 			btnPlay.setText(icon);
@@ -734,7 +738,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 		if (lblTitleIcon != null)
 			lblTitleIcon.setIcon(icon);
 		if (songHasChanged) {
-			if (Player.followCurrentSong && list != null && !list.changingCurrentWouldScareUser())
+			if (!skipBringingCurrentIntoView && Player.followCurrentSong && list != null && !list.changingCurrentWouldScareUser())
 				bringCurrentIntoView();
 			if (lblTitle != null) {
 				final String newTitle = Player.getCurrentTitle(barSeek == null && Player.isPreparing());
@@ -803,7 +807,7 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 
 	@Override
 	public void onPlayerMetadataChanged(Song currentSong) {
-		onPlayerChanged(currentSong, true, true, null);
+		onPlayerChanged(currentSong, true, true, true, null);
 		if (list != null) {
 			for (int i = list.getChildCount() - 1; i >= 0; i--) {
 				final View view = list.getChildAt(i);
