@@ -503,7 +503,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					thePlayer.onInfo(localPlayer, MediaPlayerBase.INFO_METADATA_UPDATE, 0, msg.obj);
 				break;
 			case MSG_BROADCAST_STATE_CHANGE:
-				broadcastStateChange(msg.obj == null ? null : msg.obj.toString(), (msg.arg1 & 0x01) != 0, (msg.arg1 & 0x02) != 0);
+				// Refer to the comments in broadcastStateChange()
+				//broadcastStateChange(msg.obj == null ? null : msg.obj.toString(), (msg.arg1 & 0x01) != 0, (msg.arg1 & 0x02) != 0);
+				refreshNotification();
 				break;
 			}
 		}
@@ -4025,7 +4027,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		}
 		final long now = SystemClock.uptimeMillis();
 		if (notificationLastUpdateTime == 0) {
-			// "Refer to the comments in broadcastStateChange()" in MSG_UPDATE_STATE points here :)
+			// The comments "Refer to the comments in broadcastStateChange()" point here :)
 			// A few years ago, in a few devices, the initial notification (just after startup)
 			// displayed "Loading...", which is the initial title, forever, until something changed.
 			// I have never been able to figure out why... I guess it had something to do with the
@@ -4037,13 +4039,22 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			// MSG_UPDATE_STATE, just in case there are old devices still using the app. This way,
 			// new devices will not display "Loading..." for two seconds, and old devices will receive
 			// a second refresh notification two seconds after the startup, just like before :)
-			if (handler != null)
-				handler.sendMessageAtTime(Message.obtain(handler, MSG_UPDATE_STATE), now + 2000);
+			// Two extra changes, though... Since MSG_UPDATE_STATE makes ActivityMain center current
+			// song into view, I replaced it with MSG_BROADCAST_STATE_CHANGE. Also, I decided to
+			// change the implementation of MSG_BROADCAST_STATE_CHANGE, in order not to send any flags
+			// here, because they could be outdated when handled.
+			//if (handler != null)
+			//	handler.sendMessageAtTime(Message.obtain(handler, MSG_UPDATE_STATE), now + 2000);
+			if (localHandler != null) {
+				notificationBroadcastPending = true;
+				localHandler.sendMessageAtTime(Message.obtain(handler, MSG_BROADCAST_STATE_CHANGE), now + 2000);
+			}
 		} else {
 			final long delta = now - notificationLastUpdateTime;
 			if (delta < 200) {
 				notificationBroadcastPending = true;
-				localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_BROADCAST_STATE_CHANGE, (preparing ? 0x01 : 0) | (titleOrSongHaveChanged ? 0x02 : 0), 0, title), notificationLastUpdateTime + 210);
+				//localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_BROADCAST_STATE_CHANGE, (preparing ? 0x01 : 0) | (titleOrSongHaveChanged ? 0x02 : 0), 0, title), notificationLastUpdateTime + 210);
+				localHandler.sendMessageAtTime(Message.obtain(localHandler, MSG_BROADCAST_STATE_CHANGE), notificationLastUpdateTime + 210);
 				return;
 			}
 		}
