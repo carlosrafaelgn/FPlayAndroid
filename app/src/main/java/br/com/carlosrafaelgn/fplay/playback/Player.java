@@ -49,6 +49,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.media.MediaMetadata;
@@ -92,6 +93,7 @@ import br.com.carlosrafaelgn.fplay.WidgetMain;
 import br.com.carlosrafaelgn.fplay.activity.ActivityHost;
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
+import br.com.carlosrafaelgn.fplay.list.AlbumArtFetcher;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
 import br.com.carlosrafaelgn.fplay.list.Song;
 import br.com.carlosrafaelgn.fplay.list.SongList;
@@ -102,6 +104,7 @@ import br.com.carlosrafaelgn.fplay.plugin.wirelessvisualizer.WirelessVisualizer;
 import br.com.carlosrafaelgn.fplay.ui.BgListView;
 import br.com.carlosrafaelgn.fplay.ui.UI;
 import br.com.carlosrafaelgn.fplay.util.ArraySorter;
+import br.com.carlosrafaelgn.fplay.util.ReleasableBitmapWrapper;
 import br.com.carlosrafaelgn.fplay.util.SerializableMap;
 import br.com.carlosrafaelgn.fplay.util.TextNormalizer;
 import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
@@ -147,7 +150,7 @@ import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 //when adding breakpoints to Player Core Thread
 //************************************************************************************
 
-public final class Player extends Service implements AudioManager.OnAudioFocusChangeListener, MediaPlayerBase.OnErrorListener, MediaPlayerBase.OnSeekCompleteListener, MediaPlayerBase.OnPreparedListener, MediaPlayerBase.OnCompletionListener, MediaPlayerBase.OnInfoListener, ArraySorter.Comparer<FileSt> {
+public final class Player extends Service implements AudioManager.OnAudioFocusChangeListener, MediaPlayerBase.OnErrorListener, MediaPlayerBase.OnSeekCompleteListener, MediaPlayerBase.OnPreparedListener, MediaPlayerBase.OnCompletionListener, MediaPlayerBase.OnInfoListener, ArraySorter.Comparer<FileSt>, AlbumArtFetcher.AlbumArtFetcherListener {
 	public interface PlayerObserver {
 		void onPlayerChanged(Song currentSong, boolean songHasChanged, boolean preparingHasChanged, Throwable ex);
 		void onPlayerMetadataChanged(Song currentSong);
@@ -788,6 +791,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		localHandler = null;
 		notification = null;
 		notificationManager = null;
+		destroyNotificationAlbumArt();
 		audioManager = null;
 		telephonyManager = null;
 		powerManager = null;
@@ -2783,6 +2787,101 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		return views;
 	}
 
+	//the album art fetcher used by the notification must not be Player.songs.albumArtFetcher
+	private static AlbumArtFetcher notificationAlbumArtFetcher;
+	private static volatile Song notificationAlbumArtSong;
+	private static volatile int notificationAlbumArtRequestId;
+	private static ReleasableBitmapWrapper notificationAlbumArt;
+
+	//Runs on a SECONDARY thread
+	@Override
+	public void albumArtFetched(ReleasableBitmapWrapper bitmap, int requestId) {
+		final Handler h = localHandler;
+		if (bitmap == null || requestId != notificationAlbumArtRequestId || h == null)
+			return;
+
+		synchronized (theUI) {
+			if (requestId != notificationAlbumArtRequestId || notificationAlbumArt != null || bitmap.bitmap == null)
+				return;
+
+			bitmap.addRef();
+			notificationAlbumArt = bitmap;
+		}
+
+		h.sendMessageAtTime(Message.obtain(h, MSG_BROADCAST_STATE_CHANGE), SystemClock.uptimeMillis());
+	}
+
+	//Runs on a SECONDARY thread
+	@Override
+	public Long albumIdForRequestId(int requestId) {
+		final Song song = notificationAlbumArtSong;
+		return ((song != null && requestId == notificationAlbumArtRequestId) ? song.albumId : null);
+	}
+
+	//Runs on a SECONDARY thread
+	@Override
+	public String fileUriForRequestId(int requestId) {
+		final Song song = notificationAlbumArtSong;
+		return ((song != null && requestId == notificationAlbumArtRequestId) ? song.path : null);
+	}
+
+	//Runs on a SECONDARY thread
+	@Override
+	public long artistIdForRequestId(int requestId) {
+		return 0;
+	}
+
+	private static void updateNotificationAlbumArt() {
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP || thePlayer == null || !UI.albumArtSongList)
+			return;
+		final Song song = localSong;
+		if (notificationAlbumArtSong == song)
+			return;
+		if (notificationAlbumArtFetcher != null)
+			notificationAlbumArtFetcher.cancelRequest(notificationAlbumArtRequestId, thePlayer);
+		final boolean validAlbumArt = (song != null && song.validAlbumArt && (song.albumId == null || song.albumId != 0L));
+		if (validAlbumArt && notificationAlbumArtFetcher == null)
+			notificationAlbumArtFetcher = new AlbumArtFetcher();
+		final int requestId = (validAlbumArt ? notificationAlbumArtFetcher.getNextRequestId() : 0);
+		synchronized (theUI) {
+			if (notificationAlbumArt != null) {
+				notificationAlbumArt.release();
+				notificationAlbumArt = null;
+			}
+			notificationAlbumArtSong = song;
+			notificationAlbumArtRequestId = requestId;
+		}
+		if (validAlbumArt) {
+			final ReleasableBitmapWrapper albumArt = notificationAlbumArtFetcher.getAlbumArt(song.albumId, 512, requestId, thePlayer);
+			if (albumArt != null) {
+				synchronized (theUI) {
+					notificationAlbumArt = albumArt;
+				}
+			}
+		}
+	}
+
+	private static Bitmap getNotificationAlbumArtBitmap() {
+		synchronized (theUI) {
+			return ((notificationAlbumArt != null) ? notificationAlbumArt.bitmap : null);
+		}
+	}
+
+	private static void destroyNotificationAlbumArt() {
+		synchronized (theUI) {
+			notificationAlbumArtSong = null;
+			notificationAlbumArtRequestId = 0;
+			if (notificationAlbumArt != null) {
+				notificationAlbumArt.release();
+				notificationAlbumArt = null;
+			}
+			if (notificationAlbumArtFetcher != null) {
+				notificationAlbumArtFetcher.stopAndCleanup();
+				notificationAlbumArtFetcher = null;
+			}
+		}
+	}
+
 	@TargetApi(Build.VERSION_CODES.O)
 	private static void createMediaStyleNotificationWithChannel() {
 		// https://developer.android.com/reference/android/app/Notification.MediaStyle
@@ -2804,6 +2903,10 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			.setOngoing(false)
 			.setContentIntent(intentActivityHost)
 			.setDeleteIntent(intentExit);
+
+		final Bitmap albumArt = getNotificationAlbumArtBitmap();
+		if (albumArt != null)
+			builder.setLargeIcon(albumArt);
 
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
 			builder.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE);
@@ -4006,7 +4109,9 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 					mediaSessionMetadataBuilder.putLong(MediaMetadata.METADATA_KEY_TRACK_NUMBER, localSong.track);
 					mediaSessionMetadataBuilder.putLong(MediaMetadata.METADATA_KEY_DURATION, localSong.lengthMS);
 					mediaSessionMetadataBuilder.putLong(MediaMetadata.METADATA_KEY_YEAR, localSong.year);
+					mediaSessionMetadataBuilder.putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, getNotificationAlbumArtBitmap());
 					mediaSession.setMetadata(mediaSessionMetadataBuilder.build());
+					mediaSessionMetadataBuilder.putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, null);
 				}
 			}
 		} catch (Throwable ex) {
@@ -4059,6 +4164,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			}
 		}
 		notificationLastUpdateTime = now;
+		updateNotificationAlbumArt();
 		try {
 			notificationManager.notify(NOTIFICATION_ID, getNotification());
 		} catch (Throwable ex) {
