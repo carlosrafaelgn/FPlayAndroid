@@ -126,6 +126,15 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 		final Thread thread = new Thread(this, "Album Art Fetcher Thread");
 		thread.setDaemon(true);
 		thread.start();
+		synchronized (sync) {
+			if (handler == null) {
+				try {
+					sync.wait();
+				} catch (Throwable ex) {
+					//just ignore...
+				}
+			}
+		}
 	}
 	
 	//Runs on a SECONDARY thread
@@ -134,7 +143,10 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 		Looper.prepare();
 		looper = Looper.myLooper();
 		//noinspection ConstantConditions
-		handler = new Handler(looper, this);
+		synchronized (sync) {
+			handler = new Handler(looper, this);
+			sync.notify();
+		}
 		Looper.loop();
 	}
 	
