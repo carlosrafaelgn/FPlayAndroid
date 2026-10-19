@@ -464,7 +464,7 @@ public final class SongView extends View implements View.OnClickListener, View.O
 			if (msg.what == requestId) {
 				pendingAlbumArtRequest = false;
 				if (handler != null && song != null) {
-					song.albumId = AlbumArtFetcher.zeroAlbumId;
+					song.albumId = AlbumArtFetcher.ZERO_ALBUM_ID;
 					invalidate();
 				}
 			}

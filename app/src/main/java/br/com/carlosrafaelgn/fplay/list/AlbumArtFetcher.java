@@ -72,7 +72,8 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 		long artistIdForRequestId(int requestId);
 	}
 
-	public static final Long zeroAlbumId = 0L;
+	public static final int DEFAULT_MAX_SIZE = 8 * 1024 * 1024;
+	public static final Long ZERO_ALBUM_ID = 0L;
 
 	private final Object sync;
 	private final BitmapFactory.Options opts;
@@ -91,10 +92,11 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 
 	/**
 	 * Setup LRU cache, canvas for bitmap
-	 * set maximum memory limit for cache to 8 MB
+	 * set maximum memory limit for cache to maxSize (in bytes)
+	 * and maximum number of cached items to maxItems (0 = no limit)
 	 * and start a new thread to fetch bitmap.
 	 */
-	public AlbumArtFetcher() {
+	public AlbumArtFetcher(int maxSize, int maxItems) {
 		sync = new Object();
 		opts = new BitmapFactory.Options();
 		contentResolver = Player.theApplication.getContentResolver();
@@ -111,10 +113,10 @@ public final class AlbumArtFetcher implements Runnable, Handler.Callback {
 		audioExternalUri = Uri.parse("content://media/external/audio/media"); //MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
 		long max = Runtime.getRuntime().maxMemory();
 		max >>= 4; //1/16
-		//do not eat up more than 8 MiB
-		if (max > (8 * 1024 * 1024))
-			max = 8 * 1024 * 1024;
-		cache = new BitmapLruCache((int)max);
+		//do not eat up more than maxSize bytes
+		if (max > (long)maxSize)
+			max = maxSize;
+		cache = new BitmapLruCache((int)max, maxItems);
 		tempStorage = new byte[16384];
 		canvas = new Canvas();
 		paint = new Paint();

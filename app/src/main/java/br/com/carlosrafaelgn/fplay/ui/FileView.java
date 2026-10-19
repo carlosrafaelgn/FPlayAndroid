@@ -592,7 +592,7 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 			if (msg.what == requestId) {
 				pendingAlbumArtRequest = false;
 				if (handler != null && file != null) {
-					file.albumId = AlbumArtFetcher.zeroAlbumId;
+					file.albumId = AlbumArtFetcher.ZERO_ALBUM_ID;
 					invalidate();
 				}
 			}

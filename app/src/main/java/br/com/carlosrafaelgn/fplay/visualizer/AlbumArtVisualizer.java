@@ -85,7 +85,7 @@ public final class AlbumArtVisualizer extends View implements Visualizer, MainHa
 		point = new Point();
 		srcRect = new Rect();
 		dstRect = new Rect();
-		albumArtFetcher = new AlbumArtFetcher();
+		albumArtFetcher = new AlbumArtFetcher(AlbumArtFetcher.DEFAULT_MAX_SIZE, 1);
 		color1 = UI.colorState_text_visualizer_static.getDefaultColor();
 		color2 = ColorUtils.blend(color1, UI.color_visualizer565, 0.5f);
 		currentSongInfoId = -1;

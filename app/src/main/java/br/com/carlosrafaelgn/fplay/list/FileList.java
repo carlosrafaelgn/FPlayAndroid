@@ -196,7 +196,7 @@ public final class FileList extends BaseList<FileSt> implements FileFetcher.List
 
 	public void syncAlbumArtFetcher() {
 		if (albumArtFetcher == null)
-			albumArtFetcher = new AlbumArtFetcher();
+			albumArtFetcher = new AlbumArtFetcher(AlbumArtFetcher.DEFAULT_MAX_SIZE, 0);
 	}
 
 	public void destroyAlbumArtFetcher() {

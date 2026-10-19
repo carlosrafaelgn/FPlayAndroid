@@ -988,7 +988,7 @@ public final class SongList extends BaseList<Song> implements Comparer<Song> {
 	public void syncAlbumArtFetcher() {
 		if (UI.albumArtSongList) {
 			if (albumArtFetcher == null)
-				albumArtFetcher = new AlbumArtFetcher();
+				albumArtFetcher = new AlbumArtFetcher(AlbumArtFetcher.DEFAULT_MAX_SIZE, 0);
 		} else {
 			destroyAlbumArtFetcher();
 		}

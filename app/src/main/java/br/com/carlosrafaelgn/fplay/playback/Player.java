@@ -2841,7 +2841,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			notificationAlbumArtFetcher.cancelRequest(notificationAlbumArtRequestId, thePlayer);
 		final boolean validAlbumArt = (song != null && song.validAlbumArt && (song.albumId == null || song.albumId != 0L));
 		if (validAlbumArt && notificationAlbumArtFetcher == null)
-			notificationAlbumArtFetcher = new AlbumArtFetcher();
+			notificationAlbumArtFetcher = new AlbumArtFetcher(AlbumArtFetcher.DEFAULT_MAX_SIZE, 1);
 		final int requestId = (validAlbumArt ? notificationAlbumArtFetcher.getNextRequestId() : 0);
 		synchronized (theUI) {
 			if (notificationAlbumArt != null) {

@@ -61,11 +61,14 @@ import java.util.Map;
 @SuppressWarnings("NonAtomicOperationOnVolatileField")
 public final class BitmapLruCache {
 	private volatile int size;
-	private final int maxSize;
+	private final int maxSize, maxItems;
 	private final LinkedHashMap<Long, ReleasableBitmapWrapper> map;
-	
-	public BitmapLruCache(int maxSize) {
+
+	//When maxItems is 0, there is no limit for the number of items,
+	//and the cache is limited only by maxSize
+	public BitmapLruCache(int maxSize, int maxItems) {
 		this.maxSize = maxSize;
+		this.maxItems = maxItems;
 		this.map = new LinkedHashMap<>(0, 0.75f, true);
 	}
 	
@@ -91,7 +94,7 @@ public final class BitmapLruCache {
 	}
 	
 	public void trimToSize(int maxSize) {
-		while (size > maxSize && size > 0 && !map.isEmpty()) {
+		while (((size > maxSize && size > 0) || (maxItems > 0 && map.size() > maxItems)) && !map.isEmpty()) {
 			//Map.Entry<Long, Bitmap> toEvict = map.eldest();
 			
 			//According to this source file: http://grepcode.com/file/repository.grepcode.com/java/root/jdk/openjdk/6-b27/java/util/LinkedHashMap.java
