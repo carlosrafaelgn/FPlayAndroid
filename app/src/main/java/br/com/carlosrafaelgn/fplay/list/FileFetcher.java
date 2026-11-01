@@ -286,11 +286,11 @@ public final class FileFetcher implements Runnable, ArraySorter.Comparer<FileSt>
 		files[count] = new FileSt(FileSt.ALBUM_ROOT + FileSt.FAKE_PATH_ROOT + desc, desc, FileSt.TYPE_ALBUM_ROOT);
 		count++;
 
-		files[count] = new FileSt("", "SHOUTcast", FileSt.TYPE_SHOUTCAST);
+		files[count] = new FileSt("", "Community Radio Station Index", FileSt.TYPE_COMMUNITY_RADIO);
 		count++;
 
-		//files[count] = new FileSt("", "Icecast", FileSt.TYPE_ICECAST);
-		//count++;
+		files[count] = new FileSt("", "SHOUTcast", FileSt.TYPE_SHOUTCAST);
+		count++;
 
 		if (Player.REMOTE_LIST_ENABLED) {
 			files[count] = new FileSt("", Player.theApplication.getText(R.string.remote_list).toString(), FileSt.TYPE_FPLAY_REMOTE_LIST);

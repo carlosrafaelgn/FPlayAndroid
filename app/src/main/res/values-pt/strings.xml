@@ -253,7 +253,10 @@
     <string name="search">Procurar</string>
     <string name="genre">Gênero</string>
     <string name="search_term">Termo de pesquisa</string>
+    <string name="country">País</string>
+    <string name="all_countries">Todos os países</string>
     <string name="tags">Tags</string>
+    <string name="tags_comma_separated">Tags (separadas por vírgulas)</string>
     <string name="no_description">Sem descrição :(</string>
     <string name="no_tags">Sem tags :(</string>
     <string name="no_favorites">Ainda sem favoritas!\n\nMarque estações de rádio como favoritas para encontrá-las aqui :)</string>

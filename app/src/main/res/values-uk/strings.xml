@@ -253,7 +253,10 @@
     <string name="search">Шукати</string>
     <string name="genre">Жанр</string>
     <string name="search_term">Критерії пошуку</string>
+    <string name="country">Країна</string>
+    <string name="all_countries">Усі країни</string>
     <string name="tags">Теги</string>
+    <string name="tags_comma_separated">Теги (через кому)</string>
     <string name="no_description">Немає опису :(</string>
     <string name="no_tags">Немає тегів :(</string>
     <string name="no_favorites">Немає обраних ще!\n\nЯк тільки ви вибираєте ваші улюблені радіостанції, ви знайдете їх тут :)</string>

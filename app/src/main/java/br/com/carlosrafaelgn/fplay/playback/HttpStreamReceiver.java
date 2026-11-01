@@ -62,6 +62,7 @@ import java.nio.channels.SocketChannel;
 import java.util.Locale;
 
 import br.com.carlosrafaelgn.fplay.BuildConfig;
+import br.com.carlosrafaelgn.fplay.list.CommunityRadioStationIndexList;
 import br.com.carlosrafaelgn.fplay.list.RadioStation;
 import br.com.carlosrafaelgn.fplay.playback.context.MediaPlayerBase;
 import br.com.carlosrafaelgn.fplay.ui.UI;
@@ -1061,7 +1062,7 @@ public final class HttpStreamReceiver implements Runnable {
 			synchronized (sync) {
 				if (!alive)
 					return -1;
-				resolver = new RadioStationResolver(parts[1], parts[2], parts[3].equals("1"));
+				resolver = new RadioStationResolver(parts[1], parts[2], parts[4], parts[3].equals("1"));
 			}
 
 			final String[] newPath = new String[1];
@@ -1285,6 +1286,11 @@ public final class HttpStreamReceiver implements Runnable {
 				synchronized (sync) {
 					sync.notifyAll();
 				}
+				//the community radio station index asks players to count a click every time
+				//users start playing a station (SHOUTcast stations are ignored)
+				final String[] parts = RadioStation.splitPath(path);
+				if (parts != null && !parts[3].equals("1") && parts[4] != null)
+					CommunityRadioStationIndexList.countClick(parts[4]);
 			}
 
 			audioCountdown = icyMetaInterval - bufferingCounter;

@@ -266,7 +266,10 @@
     <string name="search">Search</string>
     <string name="genre">Genre</string>
     <string name="search_term">Search term</string>
+    <string name="country">Country</string>
+    <string name="all_countries">All countries</string>
     <string name="tags">Tags</string>
+    <string name="tags_comma_separated">Tags (separated by commas)</string>
     <string name="no_description">No description :(</string>
     <string name="no_tags">No tags :(</string>
     <string name="no_favorites">No favorites yet!\n\nMark radio stations as favorite so you can find them here :)</string>

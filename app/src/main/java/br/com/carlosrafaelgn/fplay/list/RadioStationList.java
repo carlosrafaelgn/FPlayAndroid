@@ -73,7 +73,7 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 	private volatile boolean readyToFetch, isSavingFavorites, reset, moreResults;
 	protected volatile int version;
 	private volatile RadioStationGenre genreToFetch;
-	private volatile String searchTermToFetch;
+	private volatile String searchTermToFetch, searchCountryToFetch, searchTagsToFetch;
 	private RadioStationCache cache;
 	public RadioStationAddedObserver radioStationAddedObserver;
 	
@@ -160,10 +160,17 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 			bs = new BufferedInputStream(fs, 4096);
 			final int version = Serializer.deserializeInt(bs);
 			final int count = Math.min(Serializer.deserializeInt(bs), MAX_COUNT);
-			if (version == 0x0100 && count > 0) {
+			//0x0101 is the same as 0x0100, but it has been introduced along with
+			//CommunityRadioStationIndexList, which old versions do not know how to read
+			if ((version == 0x0100 || version == 0x0101) && count > 0) {
 				favorites.clear();
-				for (int i = 0; i < count; i++)
-					favorites.add(RadioStation.deserialize(bs, true));
+				for (int i = 0; i < count; i++) {
+					final RadioStation radioStation = RadioStation.deserialize(bs, true);
+					//ignore saved Icecast favorites from old versions
+					if (version == 0x0100 && !radioStation.isShoutcast)
+						continue;
+					favorites.add(radioStation);
+				}
 			}
 		} catch (IOException ex) {
 			if (ex instanceof FileNotFoundException && fs == null) {
@@ -195,7 +202,7 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 			int i = 0;
 			fs = Player.theApplication.openFileOutput("_RadioFav", 0);
 			bs = new BufferedOutputStream(fs, 4096);
-			Serializer.serializeInt(bs, 0x0100);
+			Serializer.serializeInt(bs, 0x0101);
 			Serializer.serializeInt(bs, count);
 			for (RadioStation s : favorites) {
 				if (i >= count)
@@ -236,6 +243,8 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 		final int myVersion = version;
 		final RadioStationGenre genre = genreToFetch;
 		final String searchTerm = searchTermToFetch;
+		final String searchCountry = searchCountryToFetch;
+		final String searchTags = searchTagsToFetch;
 		final boolean isSavingFavorites = this.isSavingFavorites;
 		final boolean reset = this.reset;
 		readyToFetch = true;
@@ -293,7 +302,7 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 			return;
 		}
 
-		fetchStationsInternal(myVersion, genre, searchTerm, reset, true);
+		fetchStationsInternal(myVersion, genre, searchTerm, searchCountry, searchTags, reset, true);
 	}
 
 	public final void addFavoriteStation(RadioStation station) {
@@ -324,10 +333,11 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 			MainHandler.sendMessage(this, MSG_ERROR, myVersion, err);
 	}
 
-	protected abstract void fetchStationsInternal(int myVersion, RadioStationGenre genre, String searchTerm, boolean reset, boolean sendMessages);
+	//searchCountry and searchTags are only used by CommunityRadioStationIndexList (the other lists ignore them)
+	protected abstract void fetchStationsInternal(int myVersion, RadioStationGenre genre, String searchTerm, String searchCountry, String searchTags, boolean reset, boolean sendMessages);
 
 	@SuppressWarnings("UnusedReturnValue")
-	public final boolean fetchStations(RadioStationGenre genre, String searchTerm, boolean reset) {
+	public final boolean fetchStations(RadioStationGenre genre, String searchTerm, String searchCountry, String searchTags, boolean reset) {
 		while (!readyToFetch)
 			Thread.yield();
 		cancel();
@@ -343,6 +353,8 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 		isSavingFavorites = false;
 		genreToFetch = genre;
 		searchTermToFetch = searchTerm;
+		searchCountryToFetch = searchCountry;
+		searchTagsToFetch = searchTags;
 		readyToFetch = false;
 		final Thread thread = new Thread(this, "Radio Station Fetcher Thread");
 		try {
@@ -366,8 +378,10 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 		isSavingFavorites = false;
 		genreToFetch = null;
 		searchTermToFetch = null;
+		searchCountryToFetch = null;
+		searchTagsToFetch = null;
 		readyToFetch = false;
-		final Thread thread = new Thread(this, "Icecast Favorite Stations Fetcher Thread");
+		final Thread thread = new Thread(this, "Radio Favorite Stations Fetcher Thread");
 		try {
 			thread.setDaemon(true);
 			thread.start();
@@ -387,8 +401,10 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 		isSavingFavorites = true;
 		genreToFetch = null;
 		searchTermToFetch = null;
+		searchCountryToFetch = null;
+		searchTagsToFetch = null;
 		readyToFetch = false;
-		final Thread thread = new Thread(this, "Icecast Favorite Stations Storer Thread");
+		final Thread thread = new Thread(this, "Radio Favorite Stations Storer Thread");
 		try {
 			thread.setDaemon(true);
 			thread.start();
@@ -429,7 +445,7 @@ public abstract class RadioStationList extends BaseList<RadioStation> implements
 			//noinspection NonAtomicOperationOnVolatileField
 			version++;
 			loading = false;
-			fetchStationsInternal(version, null, title, true, false);
+			fetchStationsInternal(version, null, title, null, null, true, false);
 			if (items == null)
 				return null;
 			int i = 0;

@@ -67,7 +67,7 @@ public final class FileSt extends BaseItem {
 	public static final int TYPE_ALBUM_ROOT = 10;
 	public static final int TYPE_ALBUM_ITEM = 11;
 	public static final int TYPE_EXTERNAL_STORAGE_USB = 12;
-	public static final int TYPE_ICECAST = 13;
+	public static final int TYPE_COMMUNITY_RADIO = 13;
 	public static final int TYPE_SHOUTCAST = 14;
 	public static final int TYPE_FPLAY_REMOTE_LIST = 15;
 	public final boolean isDirectory;

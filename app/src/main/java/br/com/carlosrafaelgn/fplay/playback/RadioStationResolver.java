@@ -37,7 +37,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 
-import br.com.carlosrafaelgn.fplay.list.IcecastRadioStationList;
+import br.com.carlosrafaelgn.fplay.list.CommunityRadioStationIndexList;
 import br.com.carlosrafaelgn.fplay.list.RadioStation;
 import br.com.carlosrafaelgn.fplay.list.RadioStationList;
 import br.com.carlosrafaelgn.fplay.list.ShoutcastRadioStationList;
@@ -47,15 +47,18 @@ import br.com.carlosrafaelgn.fplay.util.TypedRawArrayList;
 public final class RadioStationResolver {
 	private final Object sync;
 	private volatile boolean alive;
-	private final String m3uUrl, title;
+	private final String m3uUrl, title, stationUuid;
 	private final boolean isShoutcast;
 	private RadioStationList radioStationList;
 
-	public RadioStationResolver(String m3uUrl, String title, boolean isShoutcast) {
+	//when isShoutcast is false, m3uUrl is the station's url_resolved, and stationUuid
+	//is the station's stationuuid (which could be null for old stations)
+	public RadioStationResolver(String m3uUrl, String title, String stationUuid, boolean isShoutcast) {
 		sync = new Object();
 		alive = true;
 		this.m3uUrl = m3uUrl;
 		this.title = title;
+		this.stationUuid = ((stationUuid == null || stationUuid.length() == 0) ? null : stationUuid);
 		this.isShoutcast = isShoutcast;
 	}
 
@@ -126,32 +129,57 @@ public final class RadioStationResolver {
 	}
 
 	public String resolve(String[] newPath) {
-		if (!alive)
+		//stations from the Community Radio Station Index always have a uuid, which means
+		//this path came from an old Icecast station (dir.xiph.org), which cannot be resolved
+		if (!alive || (!isShoutcast && stationUuid == null))
 			return null;
 
 		String result;
+		RadioStation radioStation;
+		final RadioStationList list;
 
-		//first: try to resolve the stream url again (maybe something has changed)
-		result = resolveStreamUrlFromM3uUrl(m3uUrl, null);
-		if (!alive)
-			return null;
-		if (result != null) {
-			if (newPath != null)
-				newPath[0] = (new RadioStation(title, "", "", "", "", "", m3uUrl, false, isShoutcast)).buildFullPath(result);
-			return result;
+		if (isShoutcast) {
+			//first: try to resolve the stream url again (maybe something has changed)
+			result = resolveStreamUrlFromM3uUrl(m3uUrl, null);
+			if (!alive)
+				return null;
+			if (result != null) {
+				if (newPath != null)
+					newPath[0] = (new RadioStation(title, "", "", "", "", "", m3uUrl, null, false, true)).buildFullPath(result);
+				return result;
+			}
+		} else if (stationUuid != null) {
+			//first: try to fetch the station again, using its uuid (maybe something has changed)
+			final CommunityRadioStationIndexList communityList = new CommunityRadioStationIndexList("", "", "", "");
+			synchronized (sync) {
+				if (!alive)
+					return null;
+				radioStationList = communityList;
+			}
+			radioStation = communityList.fetchStationByUuid(stationUuid);
+			if (!alive)
+				return null;
+			if (radioStation != null) {
+				//for the community radio station index, m3uUrl is already the stream url
+				if (newPath != null)
+					newPath[0] = radioStation.buildFullPath(radioStation.m3uUrl);
+				return radioStation.m3uUrl;
+			}
 		}
 
 		//second: perform a new search for this radio station (this is the most time consuming operation)
 		synchronized (sync) {
 			if (!alive)
 				return null;
-			radioStationList = (isShoutcast ? new ShoutcastRadioStationList("", "", "", "") : new IcecastRadioStationList("", "", "", ""));
+			if (radioStationList == null)
+				radioStationList = (isShoutcast ? new ShoutcastRadioStationList("", "", "", "") : new CommunityRadioStationIndexList("", "", "", ""));
+			list = radioStationList;
 		}
-		final RadioStation radioStation = radioStationList.tryToFetchRadioStationAgain(title);
+		radioStation = list.tryToFetchRadioStationAgain(title);
 		if (!alive)
 			return null;
 		if (radioStation != null) {
-			result = resolveStreamUrlFromM3uUrl(radioStation.m3uUrl, null);
+			result = (radioStation.isShoutcast ? resolveStreamUrlFromM3uUrl(radioStation.m3uUrl, null) : radioStation.m3uUrl);
 			if (result != null) {
 				if (newPath != null)
 					newPath[0] = radioStation.buildFullPath(result);

@@ -319,8 +319,8 @@ public final class FileView extends LinearLayout implements View.OnClickListener
 				}
 				albumArt = newAlbumArt;
 				break;
-			case FileSt.TYPE_ICECAST:
-				icon = UI.ICON_ICECAST;
+			case FileSt.TYPE_COMMUNITY_RADIO:
+				icon = UI.ICON_RADIO;
 				if (getContext() != null)
 					secondaryText = getContext().getText(R.string.radio_directory).toString();
 				break;

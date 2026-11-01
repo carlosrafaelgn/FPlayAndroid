@@ -405,7 +405,7 @@ public final class ActivityBrowser2 extends ClientActivity implements View.OnCli
 			if (file == null) //same as above
 				return;
 			switch (file.specialType) {
-			case FileSt.TYPE_ICECAST:
+			case FileSt.TYPE_COMMUNITY_RADIO:
 				fileList.setSelection(position, position, false, true);
 				startActivity(new ActivityBrowserRadio(false), 1, list.getViewForPosition(position), true);
 				return;

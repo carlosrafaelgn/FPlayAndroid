@@ -268,7 +268,7 @@ public final class IcecastRadioStationList extends RadioStationList {
 					//-1 = error
 					switch (parseIcecastRow(parser, fields, sb)) {
 					case 1:
-						final RadioStation station = new RadioStation(fields[0], fields[1], fields[2], fields[4].length() == 0 ? noDescription : fields[4], fields[5].length() == 0 ? noOnAir : fields[5], fields[6].length() == 0 ? noTags : fields[6], fields[7], false, false);
+						final RadioStation station = new RadioStation(fields[0], fields[1], fields[2], fields[4].length() == 0 ? noDescription : fields[4], fields[5].length() == 0 ? noOnAir : fields[5], fields[6].length() == 0 ? noTags : fields[6], fields[7], null, false, false);
 						synchronized (favoritesSync) {
 							station.isFavorite = favorites.contains(station);
 						}
@@ -288,7 +288,7 @@ public final class IcecastRadioStationList extends RadioStationList {
 	}
 
 	@Override
-	protected void fetchStationsInternal(int myVersion, RadioStationGenre genre, String searchTerm, boolean reset, boolean sendMessages) {
+	protected void fetchStationsInternal(int myVersion, RadioStationGenre genre, String searchTerm, String searchCountry, String searchTags, boolean reset, boolean sendMessages) {
 		int err = 0;
 		InputStream inputStream = null;
 		HttpURLConnection urlConnection = null;

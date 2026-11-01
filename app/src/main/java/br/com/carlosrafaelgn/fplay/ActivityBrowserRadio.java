@@ -53,8 +53,8 @@ import android.widget.TextView;
 import br.com.carlosrafaelgn.fplay.activity.ClientActivity;
 import br.com.carlosrafaelgn.fplay.activity.MainHandler;
 import br.com.carlosrafaelgn.fplay.list.BaseList;
+import br.com.carlosrafaelgn.fplay.list.CommunityRadioStationIndexList;
 import br.com.carlosrafaelgn.fplay.list.FileSt;
-import br.com.carlosrafaelgn.fplay.list.IcecastRadioStationList;
 import br.com.carlosrafaelgn.fplay.list.RadioStation;
 import br.com.carlosrafaelgn.fplay.list.RadioStationGenre;
 import br.com.carlosrafaelgn.fplay.list.RadioStationList;
@@ -79,10 +79,13 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 	private TextView sep2, lblLoading;
 	private BgListView list;
 	private RadioStationGenre[] genres;
+	//countries[0] means "all countries" (only used by the community radio station index)
+	private volatile RadioStationGenre[] countries;
+	private volatile boolean loadingCountries;
 	private RadioStationList radioStationList;
 	private RelativeLayout panelSecondary, panelLoading;
-	private BgSpinner<RadioStationGenre> btnType, btnGenre, btnGenreSecondary;
-	private EditText txtTerm;
+	private BgSpinner<RadioStationGenre> btnType, btnGenre, btnGenreSecondary, btnCountry;
+	private EditText txtTerm, txtTags;
 	private BgButton btnGoBack, btnFavorite, btnSearch, btnGoBackToPlayer, btnAdd, btnPlay;
 	private boolean loading, isAtFavorites, isHidingLoadingPanel, animateListBox, pendingFavorites;
 	private FastAnimator animatorFadeIn, animatorFadeOut, loadingPanelAnimatorHide, loadingPanelAnimatorShow;
@@ -137,7 +140,7 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 		if (radioStationList.getSelection() < 0)
 			return;
 		final RadioStation radioStation = radioStationList.getItem(radioStationList.getSelection());
-		if (radioStation.m3uUrl == null || radioStation.m3uUrl.length() < 0) {
+		if (radioStation.m3uUrl == null || radioStation.m3uUrl.length() <= 0) {
 			UI.toast(R.string.error_file_not_found);
 			return;
 		}
@@ -154,7 +157,8 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 						if (Player.state >= Player.STATE_TERMINATING)
 							return;
 						final int[] resultCode = { 0 };
-						final String streamUrl = RadioStationResolver.resolveStreamUrlFromM3uUrl(radioStation.m3uUrl, resultCode);
+						//for the community radio station index, m3uUrl is already the stream url (url_resolved)
+						final String streamUrl = (radioStation.isShoutcast ? RadioStationResolver.resolveStreamUrlFromM3uUrl(radioStation.m3uUrl, resultCode) : radioStation.m3uUrl);
 						if (Player.state >= Player.STATE_TERMINATING)
 							return;
 						if (streamUrl == null)
@@ -290,6 +294,48 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 		return ((index >= genre.children.length) ? (genre.children.length - 1) : index);
 	}
 
+	private int getCountryIndex(RadioStationGenre[] countries) {
+		if (Player.radioSearchCountry == null)
+			return 0;
+		for (int i = countries.length - 1; i > 0; i--) {
+			if (Player.radioSearchCountry.equalsIgnoreCase(countries[i].name))
+				return i;
+		}
+		return 0;
+	}
+
+	private void fetchCountries() {
+		final RadioStationGenre allCountries = new RadioStationGenre(getText(R.string.all_countries).toString());
+		//if the countries cannot be fetched, at least "all countries" will be available
+		countries = new RadioStationGenre[] { allCountries };
+		loadingCountries = true;
+		try {
+			(new Thread("Radio Country Fetcher Thread") {
+				{
+					setDaemon(true);
+				}
+
+				@Override
+				public void run() {
+					try {
+						final String[] names = CommunityRadioStationIndexList.fetchCountries();
+						if (names != null) {
+							final RadioStationGenre[] newCountries = new RadioStationGenre[names.length + 1];
+							newCountries[0] = allCountries;
+							for (int i = 0; i < names.length; i++)
+								newCountries[i + 1] = new RadioStationGenre(names[i]);
+							countries = newCountries;
+						}
+					} finally {
+						loadingCountries = false;
+					}
+				}
+			}).start();
+		} catch (Throwable ex) {
+			loadingCountries = false;
+		}
+	}
+
 	private RadioStationGenre getGenre() {
 		if (genres == null)
 			return null;
@@ -323,10 +369,24 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 			if (Player.radioSearchTerm.length() < 1)
 				Player.radioSearchTerm = null;
 		}
-		if (Player.lastRadioSearchWasByGenre || Player.radioSearchTerm == null)
-			radioStationList.fetchStations(getGenre(), null, firstSearch);
+		if (Player.radioSearchCountry != null) {
+			Player.radioSearchCountry = Player.radioSearchCountry.trim();
+			if (Player.radioSearchCountry.length() < 1)
+				Player.radioSearchCountry = null;
+		}
+		if (Player.radioSearchTags != null) {
+			Player.radioSearchTags = Player.radioSearchTags.trim();
+			if (Player.radioSearchTags.length() < 1)
+				Player.radioSearchTags = null;
+		}
+		if (!useShoutcast)
+			//the community radio station index always searches by term + country + tags
+			//(searchTerm cannot be null here, otherwise fetchStations() will fetch the favorites)
+			radioStationList.fetchStations(null, (Player.radioSearchTerm == null) ? "" : Player.radioSearchTerm, Player.radioSearchCountry, Player.radioSearchTags, firstSearch);
+		else if (Player.lastRadioSearchWasByGenre || Player.radioSearchTerm == null)
+			radioStationList.fetchStations(getGenre(), null, null, null, firstSearch);
 		else
-			radioStationList.fetchStations(null, Player.radioSearchTerm, firstSearch);
+			radioStationList.fetchStations(null, Player.radioSearchTerm, null, null, firstSearch);
 		//do not call updateButtons() if onSelectionChanged() got called before!
 		if (firstSearch && selection < 0)
 			updateButtons();
@@ -426,22 +486,29 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 			if (selection < 0)
 				updateButtons();
 		} else if (view == btnSearch) {
+			//do not show the dialog while the countries are still being fetched
+			if (loadingCountries) {
+				UI.toast(R.string.loading);
+				return;
+			}
 			final Context ctx = getHostActivity();
 			final LinearLayout l = (LinearLayout)UI.createDialogView(ctx, null);
 			
 			LinearLayout.LayoutParams p;
 
-			btnType = new BgSpinner<>(ctx);
-			l.addView(btnType, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-
-			btnGenre = new BgSpinner<>(ctx);
-			btnGenre.setContentDescription(ctx.getText(R.string.genre));
-			btnGenre.setVisibility(Player.lastRadioSearchWasByGenre ? View.VISIBLE : View.GONE);
-			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-			p.topMargin = UI.dialogMargin;
-			l.addView(btnGenre, p);
-
+			//the community radio station index has no type/genre spinners: its searches
+			//always use term + tags + country
 			if (useShoutcast) {
+				btnType = new BgSpinner<>(ctx);
+				l.addView(btnType, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+				btnGenre = new BgSpinner<>(ctx);
+				btnGenre.setContentDescription(ctx.getText(R.string.genre));
+				btnGenre.setVisibility(Player.lastRadioSearchWasByGenre ? View.VISIBLE : View.GONE);
+				p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+				p.topMargin = UI.dialogMargin;
+				l.addView(btnGenre, p);
+
 				btnGenreSecondary = new BgSpinner<>(ctx);
 				btnGenreSecondary.setContentDescription(ctx.getText(R.string.genre));
 				btnGenreSecondary.setVisibility(Player.lastRadioSearchWasByGenre ? View.VISIBLE : View.GONE);
@@ -449,15 +516,40 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 				p.topMargin = UI.dialogMargin;
 				l.addView(btnGenreSecondary, p);
 			} else {
+				btnType = null;
+				btnGenre = null;
 				btnGenreSecondary = null;
 			}
 
 			txtTerm = UI.createDialogEditText(ctx, 0, Player.radioSearchTerm == null ? "" : Player.radioSearchTerm, ctx.getText(R.string.search_term), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
 			txtTerm.setOnClickListener(this);
-			txtTerm.setVisibility(!Player.lastRadioSearchWasByGenre ? View.VISIBLE : View.GONE);
+			txtTerm.setVisibility((!useShoutcast || !Player.lastRadioSearchWasByGenre) ? View.VISIBLE : View.GONE);
 			p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-			p.topMargin = UI.dialogMargin;
+			if (useShoutcast)
+				p.topMargin = UI.dialogMargin;
 			l.addView(txtTerm, p);
+
+			if (!useShoutcast) {
+				txtTags = UI.createDialogEditText(ctx, 0, Player.radioSearchTags == null ? "" : Player.radioSearchTags, ctx.getText(R.string.tags_comma_separated), InputType.TYPE_CLASS_TEXT);
+				p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+				p.topMargin = UI.dialogMargin;
+				l.addView(txtTags, p);
+			} else {
+				txtTags = null;
+			}
+
+			final RadioStationGenre[] countries = this.countries;
+			if (!useShoutcast && countries != null) {
+				btnCountry = new BgSpinner<>(ctx);
+				btnCountry.setContentDescription(ctx.getText(R.string.country));
+				p = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+				p.topMargin = UI.dialogMargin;
+				l.addView(btnCountry, p);
+				btnCountry.setItems(countries);
+				btnCountry.setSelectedItemPosition(getCountryIndex(countries));
+			} else {
+				btnCountry = null;
+			}
 
 			final TextView lbl = UI.createDialogTextView(ctx, 0, null);
 			lbl.setSingleLine(false);
@@ -468,24 +560,17 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 			lbl.setTextSize(TypedValue.COMPLEX_UNIT_PX, UI._14sp);
 			lbl.setGravity(Gravity.CENTER_HORIZONTAL);
 			if (externalUri == null) {
-				final String providedBy = getText(R.string.provided_by).toString(), msg, iconA, iconB;
-				final int w;
+				final String providedBy = getText(R.string.provided_by).toString();
 				if (useShoutcast) {
 					externalUri = Uri.parse("http://shoutcast.com");
-					msg = "<br/>A B <small>(<a href=\"http://shoutcast.com\">shoutcast.com</a>)</small>";
-					w = (int)((UI._18sp << 4) / 2.279f);
-					iconA = UI.ICON_SHOUTCAST;
-					iconB = UI.ICON_SHOUTCASTTEXT;
+					final int w = (int)((UI._18sp << 4) / 2.279f);
+					message = new SpannableStringBuilder(SafeURLSpan.parseSafeHtml(providedBy + "<br/>A B <small>(<a href=\"http://shoutcast.com\">shoutcast.com</a>)</small>"));
+					message.setSpan(new ImageSpan(new TextIconDrawable(UI.ICON_SHOUTCAST, lbl.getTextColors().getDefaultColor(), UI.spToPxI(22), 0), ImageSpan.ALIGN_BASELINE), providedBy.length() + 1, providedBy.length() + 2, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
+					message.setSpan(new ImageSpan(new TextIconDrawable(UI.ICON_SHOUTCASTTEXT, lbl.getTextColors().getDefaultColor(), w, UI._18sp, w), ImageSpan.ALIGN_BASELINE), providedBy.length() + 3, providedBy.length() + 4, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
 				} else {
-					externalUri = Uri.parse("http://dir.xiph.org");
-					msg = "<br/>A B <small>(<a href=\"http://dir.xiph.org\">dir.xiph.org</a>)</small>";
-					w = (int)((UI._18sp << 4) / 3.587f);
-					iconA = UI.ICON_ICECAST;
-					iconB = UI.ICON_ICECASTTEXT;
+					externalUri = Uri.parse("https://www.radio-browser.info");
+					message = new SpannableStringBuilder(SafeURLSpan.parseSafeHtml(providedBy + "<br/>Community Radio Station Index <small>(<a href=\"https://www.radio-browser.info\">radio-browser.info</a>)</small>"));
 				}
-				message = new SpannableStringBuilder(SafeURLSpan.parseSafeHtml(providedBy + msg));
-				message.setSpan(new ImageSpan(new TextIconDrawable(iconA, lbl.getTextColors().getDefaultColor(), UI.spToPxI(22), 0), ImageSpan.ALIGN_BASELINE), providedBy.length() + 1, providedBy.length() + 2, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-				message.setSpan(new ImageSpan(new TextIconDrawable(iconB, lbl.getTextColors().getDefaultColor(), w, UI._18sp, w), ImageSpan.ALIGN_BASELINE), providedBy.length() + 3, providedBy.length() + 4, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
 			}
 			lbl.setText(message);
 			lbl.setMovementMethod(LinkMovementMethod.getInstance());
@@ -493,17 +578,17 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 			p.topMargin = UI.dialogMargin;
 			l.addView(lbl, p);
 
-			btnType.setItems(new RadioStationGenre[]{
-				new RadioStationGenre(getText(R.string.genre).toString()),
-				new RadioStationGenre(getText(R.string.search_term).toString())
-			});
-			btnType.setSelectedItemPosition(Player.lastRadioSearchWasByGenre ? 0 : 1);
-			btnType.setOnItemSelectedListener(this);
+			if (useShoutcast) {
+				btnType.setItems(new RadioStationGenre[]{
+					new RadioStationGenre(getText(R.string.genre).toString()),
+					new RadioStationGenre(getText(R.string.search_term).toString())
+				});
+				btnType.setSelectedItemPosition(Player.lastRadioSearchWasByGenre ? 0 : 1);
+				btnType.setOnItemSelectedListener(this);
 
-			final int primaryGenreIndex = getPrimaryGenreIndex();
-			btnGenre.setItems(genres);
-			btnGenre.setSelectedItemPosition(primaryGenreIndex);
-			if (btnGenreSecondary != null) {
+				final int primaryGenreIndex = getPrimaryGenreIndex();
+				btnGenre.setItems(genres);
+				btnGenre.setSelectedItemPosition(primaryGenreIndex);
 				btnGenre.setOnItemSelectedListener(this);
 				btnGenreSecondary.setItems(genres[primaryGenreIndex].children);
 				btnGenreSecondary.setSelectedItemPosition(getSecondaryGenreIndex());
@@ -537,22 +622,27 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 			if (btnType != null)
 				Player.lastRadioSearchWasByGenre = (btnType.getSelectedItemPosition() == 0);
 			if (btnGenre != null) {
-				if (useShoutcast) {
-					Player.radioLastGenreShoutcast = btnGenre.getSelectedItemPosition();
-					if (btnGenreSecondary != null)
-						Player.radioLastGenreShoutcast |= (btnGenreSecondary.getSelectedItemPosition() << 16);
-				} else {
-					Player.radioLastGenre = btnGenre.getSelectedItemPosition();
-				}
+				Player.radioLastGenreShoutcast = btnGenre.getSelectedItemPosition();
+				if (btnGenreSecondary != null)
+					Player.radioLastGenreShoutcast |= (btnGenreSecondary.getSelectedItemPosition() << 16);
 			}
 			if (txtTerm != null)
 				Player.radioSearchTerm = txtTerm.getText().toString();
+			if (txtTags != null)
+				Player.radioSearchTags = txtTags.getText().toString();
+			if (btnCountry != null) {
+				final RadioStationGenre[] countries = this.countries;
+				final int countryIndex = btnCountry.getSelectedItemPosition();
+				Player.radioSearchCountry = ((countries == null || countryIndex <= 0 || countryIndex >= countries.length) ? null : countries[countryIndex].name);
+			}
 			doSearch(true);
 		}
 		btnType = null;
 		btnGenre = null;
 		btnGenreSecondary = null;
 		txtTerm = null;
+		txtTags = null;
+		btnCountry = null;
 		dialog.dismiss();
 	}
 	
@@ -582,10 +672,12 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 	
 	@Override
 	protected void onCreate() {
-		radioStationList = (useShoutcast ? new ShoutcastRadioStationList(getText(R.string.tags).toString(), getText(R.string.listeners).toString(), "-", UI.emoji(getText(R.string.no_description).toString())) : new IcecastRadioStationList(getText(R.string.tags).toString(), "-", UI.emoji(getText(R.string.no_description).toString()), getText(R.string.no_tags).toString()));
+		radioStationList = (useShoutcast ? new ShoutcastRadioStationList(getText(R.string.tags).toString(), getText(R.string.listeners).toString(), "-", UI.emoji(getText(R.string.no_description).toString())) : new CommunityRadioStationIndexList(getText(R.string.tags).toString(), "-", UI.emoji(getText(R.string.no_description).toString()), getText(R.string.no_tags).toString()));
 		radioStationList.setItemClickListener(this);
 		radioStationList.setActionListener(this);
 		radioStationList.setSelectionChangedListener(this);
+		if (!useShoutcast)
+			fetchCountries();
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -657,13 +749,13 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 
 	@Override
 	protected void onPostCreateLayout(boolean firstCreation) {
-		genres = RadioStationGenre.loadGenres(getHostActivity(), useShoutcast);
-		if (genres == null)
-			genres = new RadioStationGenre[] { new RadioStationGenre() };
-		if (useShoutcast)
+		//genres are only used by SHOUTcast
+		if (useShoutcast) {
+			genres = RadioStationGenre.loadGenres(getHostActivity(), true);
+			if (genres == null)
+				genres = new RadioStationGenre[] { new RadioStationGenre() };
 			Player.radioLastGenreShoutcast = validateGenreIndex(Player.radioLastGenreShoutcast);
-		else
-			Player.radioLastGenre = validateGenreIndex(Player.radioLastGenre);
+		}
 
 		restoreCacheOrDoSearch();
 	}

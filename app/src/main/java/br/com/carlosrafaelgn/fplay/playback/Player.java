@@ -2283,6 +2283,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static final int OPT_RADIOLASTGENRESHOUTCAST = 0x0037;
 	private static final int OPT_HTTPOPTIONS = 0x0038;
 	private static final int OPT_MEDIACONTEXTBUFFERCONFIG = 0x0039;
+	private static final int OPT_RADIOSEARCHCOUNTRY = 0x003A;
+	private static final int OPT_RADIOSEARCHTAGS = 0x003B;
 
 	//values 0x01xx are shared among all effects
 	//static final int OPT_EQUALIZER_ENABLED = 0x0100;
@@ -2390,7 +2392,7 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 	private static HashSet<String> favoriteFolders;
 	private static PendingIntent intentActivityHost, intentPrevious, intentPlayPause, intentNext, intentExit;
 	private static int headsetHookActions, headsetHookPressCount, telephonyFeatureState;
-	public static String path, originalPath, radioSearchTerm;
+	public static String path, originalPath, radioSearchTerm, radioSearchCountry, radioSearchTags;
 	public static boolean lastRadioSearchWasByGenre, nextPreparationEnabled, doNotAttenuateVolume, clearListWhenPlayingFolders, controlMode, bassBoostMode, handleCallKey, playWhenHeadsetPlugged, goBackWhenPlayingFolders, turnOffWhenPlaylistEnds, followCurrentSong, announceCurrentSong; //, forceAutoIdleTurnOff;
 	public static int radioLastGenre, radioLastGenreShoutcast, fadeInIncrementOnFocus, fadeInIncrementOnPause, fadeInIncrementOnOther, turnOffTimerCustomMinutes, turnOffTimerSelectedMinutes, idleTurnOffTimerCustomMinutes, idleTurnOffTimerSelectedMinutes, filePrefetchSize;
 	public static Object radioStationCache, radioStationCacheShoutcast;
@@ -2445,6 +2447,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		if (UI.lastVersionCode < 3000138)
 			Song.extraInfoMode = Song.EXTRA_TRACK_ARTIST_ALBUM;
 		radioSearchTerm = opts.getString(OPT_RADIOSEARCHTERM);
+		radioSearchCountry = opts.getString(OPT_RADIOSEARCHCOUNTRY);
+		radioSearchTags = opts.getString(OPT_RADIOSEARCHTAGS);
 		radioLastGenre = opts.getInt(OPT_RADIOLASTGENRE, 21);
 		radioLastGenreShoutcast = opts.getInt(OPT_RADIOLASTGENRESHOUTCAST, 20);
 		httpOptions = opts.getInt(OPT_HTTPOPTIONS, 0x00000013);
@@ -2620,6 +2624,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		opts.put(OPT_BLUETOOTHVISUALIZERCONFIG, bluetoothVisualizerConfig);
 		opts.put(OPT_SONGEXTRAINFOMODE, Song.extraInfoMode);
 		opts.put(OPT_RADIOSEARCHTERM, radioSearchTerm);
+		opts.put(OPT_RADIOSEARCHCOUNTRY, radioSearchCountry);
+		opts.put(OPT_RADIOSEARCHTAGS, radioSearchTags);
 		opts.put(OPT_RADIOLASTGENRE, radioLastGenre);
 		opts.put(OPT_RADIOLASTGENRESHOUTCAST, radioLastGenreShoutcast);
 		opts.put(OPT_HTTPOPTIONS, httpOptions);
