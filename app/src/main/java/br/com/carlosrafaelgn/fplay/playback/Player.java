@@ -2055,6 +2055,53 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 		httpOptions = (httpOptions & ~0xF0) | ((msBeforePlayingIndex & 0x0F) << 4);
 	}
 
+	//titles sent by some automation systems/source clients when there is no actual information
+	private static final String[] PLACEHOLDER_STREAM_TITLES = {
+		"unknown", "unknown artist", "unknown title", "unknown - unknown", "unknown artist - unknown title",
+		"n/a", "null", "undefined", "none", "(none)", "<none>",
+		"line in", "live input", "stream"
+	};
+
+	private static boolean isStreamTitleSeparator(char c) {
+		return (c == '-' || c == '–' || c == '—');
+	}
+
+	//removes dangling separators, such as in "Artist - " or " - Title" (which happen when either
+	//the artist or the title is empty), but only when they are followed/preceded by a whitespace,
+	//so that names like "-M-" are preserved (title must have already been trimmed)
+	private static String trimStreamTitleSeparators(String title) {
+		for (; ; ) {
+			final int length = title.length();
+			if (length >= 2 && isStreamTitleSeparator(title.charAt(0)) && Character.isWhitespace(title.charAt(1)))
+				title = title.substring(1).trim();
+			else if (length >= 2 && isStreamTitleSeparator(title.charAt(length - 1)) && Character.isWhitespace(title.charAt(length - 2)))
+				title = title.substring(0, length - 1).trim();
+			else
+				return title;
+		}
+	}
+
+	private static boolean isUsefulStreamTitle(String title) {
+		//titles without a single letter or digit, such as "", "-", "--", "- -", "..." or "?",
+		//are useless (Character.isLetterOrDigit() also accepts CJK, Cyrillic... characters)
+		boolean hasLetterOrDigit = false;
+		for (int i = 0; i < title.length(); ) {
+			final int c = title.codePointAt(i);
+			if (Character.isLetterOrDigit(c)) {
+				hasLetterOrDigit = true;
+				break;
+			}
+			i += Character.charCount(c);
+		}
+		if (!hasLetterOrDigit)
+			return false;
+		for (String placeholder : PLACEHOLDER_STREAM_TITLES) {
+			if (placeholder.equalsIgnoreCase(title))
+				return false;
+		}
+		return true;
+	}
+
 	private static void httpStreamReceiverMetadataUpdate(Object extraObject) {
 		if (state != STATE_ALIVE || localSong == null || localPlayer == null || thePlayer == null)
 			return;
@@ -2078,7 +2125,8 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 			title = title.substring(firstChar, i).trim();
 			if (loopCount > 1)
 				title = title.replace("\\'", "'");
-			if (title.length() > 0) {
+			title = trimStreamTitleSeparators(title);
+			if (title.length() > 0 && isUsefulStreamTitle(title)) {
 				//****** NEVER update the song's path! we need the original title in order to be able to resolve it again, later!
 				if (metadata.icyName != null && metadata.icyName.length() > 0)
 					localSong.artist = Normalizer.normalize(metadata.icyName, Normalizer.Form.NFC).trim();
