@@ -32,6 +32,8 @@
 //
 package br.com.carlosrafaelgn.fplay.playback;
 
+import android.os.Build;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -39,8 +41,14 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collections;
 
-import javax.net.SocketFactory;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SNIHostName;
+import javax.net.ssl.SNIServerName;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
@@ -50,40 +58,88 @@ public final class SocketWrapper {
 	private OutputStream outputStream;
 
 	public SocketWrapper(URL url, int receiveBufferSize, int sendBufferSize, int timeout, int connectionTimeout) throws IOException {
-		if (!"https".equalsIgnoreCase(url.getProtocol())) {
-			//I decided to stop using SocketChannel because I could not find a way
-			//to configure its connection timeout, which is really important!
-			socket = new Socket();
-			socket.setReceiveBufferSize(receiveBufferSize);
-			socket.setSendBufferSize(sendBufferSize);
-			socket.setSoTimeout(timeout);
-			socket.setTcpNoDelay(true);
-			socket.connect(new InetSocketAddress(url.getHost(), url.getPort() < 0 ? url.getDefaultPort() : url.getPort()), connectionTimeout);
-		} else {
-			final SocketFactory sf = SSLSocketFactory.getDefault();
-			boolean connected = false;
-			SSLSocket sslSocket;
-			try {
-				sslSocket = (SSLSocket)sf.createSocket();
-			} catch (Throwable ex) {
-				//Should not happen, but...
-				sslSocket = (SSLSocket)sf.createSocket(url.getHost(), url.getPort() < 0 ? url.getDefaultPort() : url.getPort());
-				connected = true;
+		final String host = url.getHost();
+		final int port = ((url.getPort() < 0) ? url.getDefaultPort() : url.getPort());
+		//I decided to stop using SocketChannel because I could not find a way
+		//to configure its connection timeout, which is really important!
+		final Socket plainSocket = new Socket();
+		try {
+			plainSocket.setReceiveBufferSize(receiveBufferSize);
+			plainSocket.setSendBufferSize(sendBufferSize);
+			plainSocket.setSoTimeout(timeout);
+			plainSocket.setTcpNoDelay(true);
+			plainSocket.connect(new InetSocketAddress(host, port), connectionTimeout);
+			if (!"https".equalsIgnoreCase(url.getProtocol())) {
+				socket = plainSocket;
+			} else {
+				//TLS is layered on top of the plain socket, which is already connected (using our
+				//own connection timeout), because only this version of createSocket() lets the
+				//SSL socket know which host it is talking to, which is required in order to send
+				//the SNI extension (without SNI, a lot of servers abort the handshake, or send
+				//back a certificate for another host)
+				final SSLSocket sslSocket = (SSLSocket)((SSLSocketFactory)SSLSocketFactory.getDefault()).createSocket(plainSocket, host, port, true);
+				socket = sslSocket;
+				sslSocket.setUseClientMode(true);
+				enableSNI(sslSocket, host);
+				//TLS 1.1 and 1.2 are supported, but disabled by default, on Android 4.1 - 4.4
+				//(the default cipher suites are not changed, because enabling all supported
+				//cipher suites also enables TLS_FALLBACK_SCSV, which makes servers abort the
+				//handshake with an inappropriate_fallback alert, along with insecure suites)
+				if (Build.VERSION.SDK_INT >= 16 && Build.VERSION.SDK_INT < 20)
+					enableModernProtocols(sslSocket);
+				sslSocket.startHandshake();
+				//SSLSocket only validates the certificate chain, but not the host name
+				if (!HttpsURLConnection.getDefaultHostnameVerifier().verify(host, sslSocket.getSession()))
+					throw new SSLPeerUnverifiedException("Host name not verified: " + host);
 			}
-			sslSocket.setReceiveBufferSize(receiveBufferSize);
-			sslSocket.setSendBufferSize(sendBufferSize);
-			sslSocket.setSoTimeout(timeout);
-			sslSocket.setTcpNoDelay(true);
-			sslSocket.setUseClientMode(true);
-			sslSocket.setEnableSessionCreation(true);
-			sslSocket.setEnabledCipherSuites(sslSocket.getSupportedCipherSuites());
-			sslSocket.setEnabledProtocols(sslSocket.getSupportedProtocols());
-			if (!connected)
-				sslSocket.connect(new InetSocketAddress(url.getHost(), url.getPort() < 0 ? url.getDefaultPort() : url.getPort()), connectionTimeout);
-			socket = sslSocket;
+			inputStream = socket.getInputStream();
+			outputStream = socket.getOutputStream();
+		} catch (IOException | RuntimeException ex) {
+			//the caller never gets a reference to this object, so we must not leak the socket
+			if (socket != null)
+				destroy();
+			else
+				closeSilently(plainSocket);
+			throw ex;
 		}
-		inputStream = socket.getInputStream();
-		outputStream = socket.getOutputStream();
+	}
+
+	private static void enableSNI(SSLSocket sslSocket, String host) {
+		if (Build.VERSION.SDK_INT >= 24) {
+			try {
+				final SSLParameters parameters = sslSocket.getSSLParameters();
+				parameters.setServerNames(Collections.<SNIServerName>singletonList(new SNIHostName(host)));
+				sslSocket.setSSLParameters(parameters);
+			} catch (Throwable ex) {
+				//SNIHostName does not accept IP addresses (SNI is not used in that case)
+			}
+		} else {
+			//older versions only send SNI when setHostname() is called (this is what OkHttp does)
+			try {
+				sslSocket.getClass().getMethod("setHostname", String.class).invoke(sslSocket, host);
+			} catch (Throwable ex) {
+				//just ignore if this socket implementation does not have setHostname()
+			}
+		}
+	}
+
+	private static void enableModernProtocols(SSLSocket sslSocket) {
+		final String[] supportedProtocols = sslSocket.getSupportedProtocols();
+		final ArrayList<String> protocols = new ArrayList<>(supportedProtocols.length);
+		for (String protocol : supportedProtocols) {
+			if (!protocol.startsWith("SSL"))
+				protocols.add(protocol);
+		}
+		if (protocols.size() != 0)
+			sslSocket.setEnabledProtocols(protocols.toArray(new String[0]));
+	}
+
+	private static void closeSilently(Socket socket) {
+		try {
+			socket.close();
+		} catch (Throwable ex) {
+			//just ignore
+		}
 	}
 
 	public void write(ByteBuffer buffer) throws IOException {
@@ -96,14 +152,17 @@ public final class SocketWrapper {
 	public int read(ByteBuffer buffer) throws IOException {
 		final int pos = buffer.position();
 		final int r = inputStream.read(buffer.array(), pos, buffer.remaining());
-		buffer.position(pos + r);
+		//r is -1 when the stream has ended
+		if (r > 0)
+			buffer.position(pos + r);
 		return r;
 	}
 
 	public void destroy() {
 		if (socket != null) {
 			try {
-				if (!socket.isClosed()) {
+				//SSL sockets do not support shutdownInput()/shutdownOutput()
+				if (!socket.isClosed() && !(socket instanceof SSLSocket)) {
 					socket.shutdownInput();
 					socket.shutdownOutput();
 				}

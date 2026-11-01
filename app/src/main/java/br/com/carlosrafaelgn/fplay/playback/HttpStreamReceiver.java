@@ -73,6 +73,12 @@ public final class HttpStreamReceiver implements Runnable {
 	private static final int MAX_TIMEOUT_COUNT = 5;
 	private static final int MAX_METADATA_LENGTH = (0xFF * 16);
 	private static final int MAX_HEADER_PACKET_LENGTH = 512; //an average response header has ~360 bytes (for a request header, even less than that)
+	//lines longer than this are truncated (this must be large enough to hold an entire location
+	//header, since some servers redirect to urls containing long signed tokens, and truncating
+	//them makes the server reply with yet another redirect, indefinitely)
+	private static final int MAX_HEADER_LINE_LENGTH = 8 * 1024;
+	//if the response header exceeds this length, something is likely to be wrong...
+	private static final int MAX_RESPONSE_HEADER_LENGTH = 32 * 1024;
 	private static final int MAX_PACKET_LENGTH = 2048;
 	private static final int MIN_BUFFER_LENGTH = 4 * MAX_PACKET_LENGTH;
 	//~10s worth of data @ 192kbps (maximum value allowed -> Player.getBytesBeforeDecoding())
@@ -802,7 +808,7 @@ public final class HttpStreamReceiver implements Runnable {
 	private int sendRequestAndParseResponse(int redirectCount) throws IOException {
 		if (!alive)
 			return -1;
-		if (redirectCount >= 3)
+		if (redirectCount >= 5)
 			throw new FileNotFoundException();
 		headerOk = false;
 		contentType = null;
@@ -830,10 +836,12 @@ public final class HttpStreamReceiver implements Runnable {
 			clientSocket = localSocket;
 		}
 		final byte[] httpCommand = ("GET " + url.getFile() + " HTTP/1.1\r\nHost:" +
-			url.getHost() +
+			url.getHost() + ((url.getPort() < 0 || url.getPort() == url.getDefaultPort()) ? "" : (":" + url.getPort())) +
 			"\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nAccept-Encoding: identity;q=1, *;q=0\r\nUser-Agent: FPlay/" +
 			UI.VERSION_NAME.substring(1) +
-			"\r\nIcy-MetaData:1\r\nAccept: */*\r\nReferer: " + url.toExternalForm() +
+			//suddenly, a few URL's stopped working when referer is sent... is this header actually necessary?
+			//"\r\nIcy-MetaData:1\r\nAccept: */*\r\nReferer: " + url.toExternalForm() +
+			"\r\nIcy-MetaData:1\r\nAccept: */*" +
 			"\r\nRange: bytes=0-\r\n\r\n").getBytes();
 		//we will use writeBuffer as a temporary storage in this method!
 		buffer.writeBuffer.limit(httpCommand.length);
@@ -846,14 +854,13 @@ public final class HttpStreamReceiver implements Runnable {
 		//second: check the content-type and the other icy-xxx headers
 		//last: wait for an empty line (a line break followed by another line break)
 
-		final byte[] tmpLine = new byte[128];
+		final byte[] tmpLine = new byte[MAX_HEADER_LINE_LENGTH];
 		int totalBytesRead = 0, lineLen = 0, timeoutCount = 0;
 		buffer.writeBuffer.limit(0);
 		buffer.writeBuffer.position(0);
-		boolean okToGo = false, shouldRedirectOnCompletion = false;
+		boolean okToGo = false, shouldRedirectOnCompletion = false, lineTruncated = false;
 
-		//if the header exceeds MIN_BUFFER_LENGTH bytes, something is likely to be wrong...
-		while (alive && totalBytesRead < MIN_BUFFER_LENGTH) {
+		while (alive && totalBytesRead < MAX_RESPONSE_HEADER_LENGTH) {
 			try {
 				if (buffer.writeBuffer.remaining() == 0) {
 					//read at most MAX_HEADER_PACKET_LENGTH bytes at a time
@@ -910,6 +917,8 @@ public final class HttpStreamReceiver implements Runnable {
 					}
 					totalBytesRead++;
 					final String line = new String(tmpLine, 0, lineLen);
+					final boolean truncated = lineTruncated;
+					lineTruncated = false;
 					if (!okToGo) {
 						if (line.startsWith("HTTP") || line.startsWith("ICY")) {
 							lineLen = line.indexOf(' ');
@@ -963,8 +972,12 @@ public final class HttpStreamReceiver implements Runnable {
 								throw new MediaPlayerBase.UnsupportedFormatException();
 							}
 						} else if (line.regionMatches(true, 0, "location", 0, 8)) {
-							if (shouldRedirectOnCompletion)
+							if (shouldRedirectOnCompletion) {
+								//following a truncated url would lead us somewhere else
+								if (truncated)
+									throw new IOException();
 								contentType = line.substring(lineLen + 1).trim();
+							}
 						} else if (line.regionMatches(true, 0, "content-type", 0, 12)) {
 							if (!shouldRedirectOnCompletion) {
 								contentType = line.substring(lineLen + 1).trim().toLowerCase(Locale.US);
@@ -1017,8 +1030,10 @@ public final class HttpStreamReceiver implements Runnable {
 					break;
 				default:
 					totalBytesRead++;
-					if (lineLen < 128)
+					if (lineLen < MAX_HEADER_LINE_LENGTH)
 						tmpLine[lineLen++] = b;
+					else
+						lineTruncated = true;
 					break;
 				}
 			} catch (SocketTimeoutException ex) {
