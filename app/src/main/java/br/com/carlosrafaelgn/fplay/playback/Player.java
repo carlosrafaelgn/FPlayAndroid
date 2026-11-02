@@ -2115,16 +2115,32 @@ public final class Player extends Service implements AudioManager.OnAudioFocusCh
 				return;
 			if ((i = title.indexOf('\'', i + 1)) < 0)
 				return;
-			final int firstChar = i + 1;
-			int loopCount = 0;
-			do {
-				loopCount++;
-				if ((i = title.indexOf('\'', i + 1)) < 0)
-					return;
-			} while (title.charAt(i - 1) == '\\');
-			title = title.substring(firstChar, i).trim();
-			if (loopCount > 1)
-				title = title.replace("\\'", "'");
+			final int firstChar = i + 1, length = title.length();
+			//most servers do not escape the quotes inside the title (as in "Guns N' Roses"), so
+			//the title only ends at the first quote followed by a semicolon, by the end of the
+			//metadata, or by the next field (as in "...'StreamUrl='...", sent by a few servers),
+			//and, if there is no such quote, at the first quote not escaped by a \
+			int firstUnescapedQuote = -1;
+			for (; ; ) {
+				if ((i = title.indexOf('\'', i + 1)) < 0) {
+					if (firstUnescapedQuote < 0)
+						return;
+					i = firstUnescapedQuote;
+					break;
+				}
+				if (title.charAt(i - 1) == '\\')
+					continue;
+				if (i == (length - 1) || title.charAt(i + 1) == ';')
+					break;
+				int nextField = i + 1;
+				while (nextField < length && Character.isLetter(title.charAt(nextField)))
+					nextField++;
+				if (nextField > (i + 1) && nextField < (length - 1) && title.charAt(nextField) == '=' && title.charAt(nextField + 1) == '\'')
+					break;
+				if (firstUnescapedQuote < 0)
+					firstUnescapedQuote = i;
+			}
+			title = title.substring(firstChar, i).replace("\\'", "'").trim();
 			title = trimStreamTitleSeparators(title);
 			if (title.length() > 0 && isUsefulStreamTitle(title)) {
 				//****** NEVER update the song's path! we need the original title in order to be able to resolve it again, later!
