@@ -33,6 +33,7 @@
 package br.com.carlosrafaelgn.fplay.playback;
 
 import java.io.IOException;
+import java.util.Locale;
 
 import br.com.carlosrafaelgn.fplay.util.PrimitiveBufferedInputStream;
 
@@ -45,7 +46,8 @@ abstract class VorbisCommentExtractor {
 
 		final int vendorLength = f.readUInt32LE();
 		blockLength -= 4;
-		if (vendorLength <= 0 || vendorLength > blockLength)
+		// Empty vendor is valid
+		if (vendorLength < 0 || vendorLength > blockLength)
 			return false;
 
 		f.skip(vendorLength);
@@ -78,7 +80,10 @@ abstract class VorbisCommentExtractor {
 				tmpPtr[0] = tmp;
 			}
 
-			f.read(tmp, 0, bytesToRead);
+			// If the file is truncated, keep everything that has been extracted so far, instead
+			// of parsing whatever had been left in tmp by previous iterations
+			if (f.read(tmp, 0, bytesToRead) < bytesToRead)
+				break;
 
 			if (length > bytesToRead)
 				f.skip(length - bytesToRead);
@@ -93,7 +98,8 @@ abstract class VorbisCommentExtractor {
 
 							String value;
 
-							switch (name.toUpperCase()) {
+							// Locale.US prevents issues like "title" becoming "TİTLE" in Turkish
+							switch (name.toUpperCase(Locale.US)) {
 							case "TITLE":
 								if ((value = new String(tmp, i + 1, bytesToRead - (i + 1), "UTF-8").trim()).length() > 0)
 									metadata.title = value;

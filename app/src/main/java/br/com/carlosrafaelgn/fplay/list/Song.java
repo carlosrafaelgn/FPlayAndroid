@@ -165,34 +165,52 @@ public final class Song extends BaseItem {
 				retr.setDataSource(fileSt.path);
 				String s;
 				if (mode == STORE_FAIL) {
-					try {
-						this.title = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
-					} catch (Throwable ex) {
-						this.title = null;
+					if (this.title == null || this.title.length() == 0) {
+						try {
+							this.title = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
+						} catch (Throwable ex) {
+							this.title = null;
+						}
 					}
-					try {
-						this.artist = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
-					} catch (Throwable ex) {
-						this.artist = null;
+					if (this.artist == null || this.artist.length() == 0) {
+						try {
+							this.artist = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
+						} catch (Throwable ex) {
+							this.artist = null;
+						}
 					}
-					try {
-						this.album = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
-					} catch (Throwable ex) {
-						this.album = null;
+					if (this.album == null || this.album.length() == 0) {
+						try {
+							this.album = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
+						} catch (Throwable ex) {
+							this.album = null;
+						}
 					}
-					try {
-						s = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER);
-						if (s != null && s.length() > 0)
-							this.track = Integer.parseInt(s);
-					} catch (Throwable ex) {
-						this.track = 0;
+					if (this.track <= 0) {
+						try {
+							s = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER);
+							if (s != null && s.length() > 0) {
+								final int slash = s.indexOf('/');
+								if (slash >= 0)
+									s = s.substring(0, slash).trim();
+								if (s.length() > 0)
+									this.track = Integer.parseInt(s);
+							}
+						} catch (Throwable ex) {
+							this.track = 0;
+						}
 					}
-					try {
-						s = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_YEAR);
-						if (s != null && s.length() > 0)
-							this.year = Integer.parseInt(s);
-					} catch (Throwable ex) {
-						this.year = 0;
+					if (this.year <= 0) {
+						try {
+							s = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_YEAR);
+							if (s != null && s.length() > 0) {
+								if (s.length() > 4)
+									s = s.substring(0, 4);
+								this.year = Integer.parseInt(s);
+							}
+						} catch (Throwable ex) {
+							this.year = 0;
+						}
 					}
 				}
 				try {
@@ -254,7 +272,7 @@ public final class Song extends BaseItem {
 			if (c != null)
 				c.close();
 		}
-		return STORE_FAIL;
+		return (lengthOnly ? STORE_MISSING_DURATION : STORE_FAIL);
 	}
 
 	private void validateFields(String fileName) {

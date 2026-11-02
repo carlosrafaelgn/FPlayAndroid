@@ -56,9 +56,158 @@ public final class MetadataExtractor {
 	public int sampleRate, channels;
 	private byte[][] tmpPtr = new byte[][] { new byte[256] };
 
+	// Reads at most rawLength bytes from in, removing the 0x00 bytes inserted after every 0xFF
+	// byte by the unsynchronisation scheme (used for ID3v2.2 and ID3v2.3 tags, where the scheme
+	// is applied to the entire tag)
+	private static final class UnsynchronisedInputStream extends InputStream {
+		private final InputStream in;
+		private int rawBytesLeft;
+		private boolean lastWasFF;
+
+		UnsynchronisedInputStream(InputStream in, int rawLength) {
+			this.in = in;
+			this.rawBytesLeft = rawLength;
+		}
+
+		@Override
+		public int read() throws IOException {
+			for (; ; ) {
+				if (rawBytesLeft <= 0)
+					return -1;
+				final int b = in.read();
+				if (b < 0) {
+					rawBytesLeft = 0;
+					return -1;
+				}
+				rawBytesLeft--;
+				final boolean inserted = (lastWasFF && b == 0);
+				lastWasFF = (b == 0xff);
+				if (!inserted)
+					return b;
+			}
+		}
+
+		@Override
+		public int read(byte[] b, int off, int len) throws IOException {
+			int total = 0;
+			while (total < len) {
+				final int c = read();
+				if (c < 0)
+					break;
+				b[off + total] = (byte)c;
+				total++;
+			}
+			return ((total == 0 && len > 0) ? -1 : total);
+		}
+
+		@Override
+		public int available() throws IOException {
+			// BufferedInputStream relies on this to decide whether to keep reading or not
+			return Math.min(rawBytesLeft, in.available());
+		}
+	}
+
 	private String readInfoStr(PrimitiveBufferedInputStream f, int actualStrLen) throws IOException {
 		actualStrLen = f.read(tmpPtr[0], 0, actualStrLen);
-		return finishReadingV2Frame(0, actualStrLen);
+		return finishReadingV2Frame(0, actualStrLen, false);
+	}
+
+	// RIFF chunks are word aligned, so a chunk with an odd length is followed by a padding byte,
+	// which is not included in the chunk length (returns the updated value of bytesLeft)
+	@SuppressWarnings("ResultOfMethodCallIgnored")
+	private static int skipRIFFPadding(PrimitiveBufferedInputStream f, int chunkLength, int bytesLeft) throws IOException {
+		if ((chunkLength & 1) == 0 || bytesLeft <= 0)
+			return bytesLeft;
+		f.skip(1);
+		return bytesLeft - 1;
+	}
+
+	// When entering extractRIFFInfo() the list type (INFO) has already been consumed, and when
+	// leaving it, all bytesLeftInChunk bytes have been consumed (unless false is returned)
+	@SuppressWarnings("ResultOfMethodCallIgnored")
+	private boolean extractRIFFInfo(PrimitiveBufferedInputStream f, int bytesLeftInChunk) throws IOException {
+		// https://www.robotplanet.dk/audio/wav_meta_data/
+		// https://www.robotplanet.dk/audio/wav_meta_data/riff_mci.pdf
+		while (bytesLeftInChunk > 0) {
+			if (bytesLeftInChunk < 8) {
+				f.skip(bytesLeftInChunk);
+				break;
+			}
+
+			final int metadataId = f.readUInt32BE();
+			final int nullTerminatedStrLen = f.readUInt32LE();
+			bytesLeftInChunk -= 8;
+
+			if (metadataId == -1)
+				return false;
+
+			if (nullTerminatedStrLen < 0 || nullTerminatedStrLen > bytesLeftInChunk) {
+				f.skip(bytesLeftInChunk);
+				break;
+			}
+
+			if (nullTerminatedStrLen <= 1) {
+				f.skip(nullTerminatedStrLen);
+				bytesLeftInChunk -= nullTerminatedStrLen;
+				bytesLeftInChunk = skipRIFFPadding(f, nullTerminatedStrLen, bytesLeftInChunk);
+				continue;
+			}
+
+			int actualStrLen = Math.min(257, nullTerminatedStrLen) - 1;
+
+			switch (metadataId) {
+			case 0x494e414d: // INAM
+				hasData = true;
+				title = readInfoStr(f, actualStrLen);
+				break;
+			case 0x49505244: // IPRD
+				hasData = true;
+				album = readInfoStr(f, actualStrLen);
+				break;
+			case 0x49415254: // IART
+				hasData = true;
+				artist = readInfoStr(f, actualStrLen);
+				break;
+			case 0x49435244: // ICRD
+				hasData = true;
+				year = readInfoStr(f, actualStrLen);
+				break;
+			case 0x4954524b: // ITRK
+			case 0x49505254: // IPRT (used by a few writers, such as ffmpeg, to store the track number)
+				hasData = true;
+				track = readInfoStr(f, actualStrLen);
+				break;
+			default:
+				actualStrLen = 0;
+				break;
+			}
+
+			f.skip(nullTerminatedStrLen - actualStrLen);
+			bytesLeftInChunk -= nullTerminatedStrLen;
+			bytesLeftInChunk = skipRIFFPadding(f, nullTerminatedStrLen, bytesLeftInChunk);
+		}
+
+		return true;
+	}
+
+	// When entering extractRIFFList() the chunk id and length have already been consumed, and
+	// when leaving it, all listLength bytes have been consumed (unless false is returned)
+	@SuppressWarnings("ResultOfMethodCallIgnored")
+	private boolean extractRIFFList(PrimitiveBufferedInputStream f, int listLength) throws IOException {
+		if (listLength < 4) {
+			f.skip(listLength);
+			return true;
+		}
+
+		final int listType = f.readUInt32BE();
+		if (listType == -1)
+			return false;
+
+		if (listType == 0x494e464f) // INFO
+			return extractRIFFInfo(f, listLength - 4);
+
+		f.skip(listLength - 4);
+		return true;
 	}
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
@@ -74,43 +223,98 @@ public final class MetadataExtractor {
 		int bytesLeftInFile = riffLength, id3Position = 0, dataLength = 0, avgBytesPerSec = 0;
 		boolean fmtOk = false, dataOk = false;
 
+		// bytesLeftInFile must always be kept up to date, as it is used to compute id3Position
+		// (the current position in the file is 8 + riffLength - bytesLeftInFile)
 		_mainLoop:
 		while (bytesLeftInFile > 0) {
-			boolean isWave = false;
-			int bytesLeftInChunk = 0, tmpChunkLength;
+			final int chunkId = f.readUInt32BE();
+			if (chunkId == -1)
+				break;
 
-			switch (f.readUInt32BE()) {
-			case -1:
-				break _mainLoop;
-
-			case 0x57415645: // WAVE
-				isWave = true;
+			if (chunkId == 0x57415645) { // WAVE (the form type, which is not followed by a length)
 				bytesLeftInFile -= 4;
+				continue;
+			}
+
+			final int chunkLength = f.readUInt32LE();
+
+			bytesLeftInFile -= 8;
+
+			if (chunkLength < 0 || chunkLength > bytesLeftInFile)
+				break;
+
+			int bytesLeftInChunk = chunkLength;
+
+			switch (chunkId) {
+			case 0x666d7420: // fmt
+				// https://docs.microsoft.com/en-us/windows/win32/api/mmeapi/ns-mmeapi-waveformatex
+				// https://docs.microsoft.com/en-us/windows/win32/directshow/audio-subtypes
+				final int wFormatTag = f.readUInt16LE(),
+					nChannels = f.readUInt16LE(),
+					nSamplesPerSec = f.readUInt32LE(),
+					nAvgBytesPerSec = f.readUInt32LE(),
+					nBlockAlign = f.readUInt16LE(),
+					wBitsPerSample = f.readUInt16LE();
+
+				bytesLeftInChunk -= 16;
+				bytesLeftInFile -= 16;
+
+				if (wFormatTag == -1 ||
+					nChannels == -1 ||
+					nSamplesPerSec == -1 ||
+					nAvgBytesPerSec == -1 ||
+					nBlockAlign == -1 ||
+					wBitsPerSample == -1)
+					break _mainLoop;
+
+				int formatTag = wFormatTag;
+
+				// https://docs.microsoft.com/en-us/windows/win32/api/mmreg/ns-mmreg-waveformatextensible
+				if (wFormatTag == 0xfffe && bytesLeftInChunk >= 24) { // WAVE_FORMAT_EXTENSIBLE
+					f.skip(8); // cbSize, wValidBitsPerSample, dwChannelMask
+
+					// The first two bytes of SubFormat (a GUID) contain the actual format tag
+					formatTag = f.readUInt16LE();
+
+					bytesLeftInChunk -= 10;
+					bytesLeftInFile -= 10;
+
+					if (formatTag == -1)
+						break _mainLoop;
+				}
+
+				// We are ignoring compressed files...
+				if (formatTag != 1 && // WAVE_FORMAT_PCM
+					formatTag != 3) // WAVE_FORMAT_IEEE_FLOAT
+					break;
+
+				fmtOk = true;
+
+				if (avgBytesPerSec == 0)
+					avgBytesPerSec = nAvgBytesPerSec;
+
+				sampleRate = nSamplesPerSec;
+				channels = nChannels;
+				break;
+
+			case 0x64617461: // data
+				dataOk = true;
+
+				if (dataLength == 0)
+					dataLength = chunkLength;
 				break;
 
 			case 0x4c495354: // LIST
-				tmpChunkLength = f.readUInt32LE();
-				if (tmpChunkLength == -1)
+				if (!extractRIFFList(f, chunkLength))
 					break _mainLoop;
 
-				bytesLeftInFile -= 8;
-				bytesLeftInChunk = tmpChunkLength;
-
-				if (bytesLeftInChunk < 0 || bytesLeftInChunk > bytesLeftInFile)
-					break _mainLoop;
+				bytesLeftInFile -= chunkLength;
+				bytesLeftInChunk = 0;
 				break;
 
 			case 0x69643320: // id3
-				tmpChunkLength = f.readUInt32LE();
-				if (tmpChunkLength == -1)
-					break _mainLoop;
-
-				bytesLeftInFile -= 8;
-
-				if (tmpChunkLength < 0 || tmpChunkLength > bytesLeftInFile)
-					break _mainLoop;
-
-				if (tmpChunkLength > 4) {
+			case 0x49443320: // ID3
+				if (bytesLeftInChunk > 4) {
 					final int b0 = f.read(),
 						b1 = f.read(),
 						b2 = f.read();
@@ -119,182 +323,27 @@ public final class MetadataExtractor {
 						break _mainLoop;
 
 					bytesLeftInFile -= 3;
-					tmpChunkLength -= 3;
+					bytesLeftInChunk -= 3;
 
-					if (b0 == 0x49 || b1 == 0x44 || b2 == 0x33) {
-						id3Position = f.totalLength - bytesLeftInFile;
+					if (b0 == 0x49 && b1 == 0x44 && b2 == 0x33) { // ID3
 						if (fmtOk && dataOk) {
+							// Nothing else is needed, so just leave f right after "ID3"
 							id3Position = -1;
 							break _mainLoop;
 						}
+						// Right after "ID3" (8 = "RIFF" + riffLength, which are not included in riffLength)
+						id3Position = 8 + riffLength - bytesLeftInFile;
 					}
 				}
-
-				f.skip(tmpChunkLength);
-
-				continue;
-
-			default:
-				tmpChunkLength = f.readUInt32LE();
-				if (tmpChunkLength == -1)
-					break _mainLoop;
-
-				bytesLeftInFile -= 8;
-
-				if (tmpChunkLength < 0 || tmpChunkLength > bytesLeftInFile)
-					break _mainLoop;
-
-				f.skip(tmpChunkLength);
-
-				continue;
+				break;
 			}
 
-			while ((isWave && (!fmtOk || !dataOk)) || bytesLeftInChunk > 0) {
-				final int subChunk = f.readUInt32BE();
-				int subChunkLength = 0;
-
-				if (subChunk == -1)
-					break _mainLoop;
-
-				bytesLeftInFile -= 4;
-				bytesLeftInChunk -= 4;
-
-				if (subChunk != 0x494e464f) { // INFO
-					subChunkLength = f.readUInt32LE();
-
-					if (subChunkLength < 0 ||
-						subChunkLength > bytesLeftInFile ||
-						(!isWave && subChunkLength > bytesLeftInChunk))
-						break _mainLoop;
-
-					bytesLeftInFile -= 4;
-					bytesLeftInChunk -= 4;
-				}
-
-				switch (subChunk) {
-				case 0x666d7420: // fmt
-					if (!isWave)
-						break;
-
-					// https://docs.microsoft.com/en-us/windows/win32/api/mmeapi/ns-mmeapi-waveformatex
-					// https://docs.microsoft.com/en-us/windows/win32/directshow/audio-subtypes
-					final int wFormatTag = f.readUInt16LE(),
-						nChannels = f.readUInt16LE(),
-						nSamplesPerSec = f.readUInt32LE(),
-						nAvgBytesPerSec = f.readUInt32LE(),
-						nBlockAlign = f.readUInt16LE(),
-						wBitsPerSample = f.readUInt16LE();
-
-					subChunkLength -= 16;
-					bytesLeftInFile -= 16;
-					bytesLeftInChunk -= 16;
-
-					if (wFormatTag == -1 ||
-						nChannels == -1 ||
-						nSamplesPerSec == -1 ||
-						nAvgBytesPerSec == -1 ||
-						nBlockAlign == -1 ||
-						wBitsPerSample == -1)
-						break _mainLoop;
-
-					// We are ignoring compressed files...
-					if (wFormatTag != 1 && // WAVE_FORMAT_PCM
-						wFormatTag != 3) // WAVE_FORMAT_IEEE_FLOAT
-						break;
-
-					fmtOk = true;
-
-					if (avgBytesPerSec == 0)
-						avgBytesPerSec = nAvgBytesPerSec;
-
-					sampleRate = nSamplesPerSec;
-					channels = nChannels;
-					break;
-
-				case 0x64617461: // data
-					if (isWave) {
-						dataOk = true;
-
-						if (dataLength == 0)
-							dataLength = subChunkLength;
-					}
-					break;
-
-				case 0x494e464f: // INFO
-					// https://www.robotplanet.dk/audio/wav_meta_data/
-					// https://www.robotplanet.dk/audio/wav_meta_data/riff_mci.pdf
-					while (bytesLeftInChunk > 0) {
-						if (bytesLeftInChunk < 4) {
-							f.skip(bytesLeftInChunk);
-							break;
-						}
-
-						final int metadataId = f.readUInt32BE();
-						bytesLeftInFile -= 4;
-						bytesLeftInChunk -= 4;
-
-						if (metadataId == -1)
-							break _mainLoop;
-
-						int nullTerminatedStrLen = f.readUInt32LE();
-						bytesLeftInFile -= 4;
-						bytesLeftInChunk -= 4;
-
-						if (nullTerminatedStrLen < 0 || nullTerminatedStrLen > bytesLeftInChunk) {
-							f.skip(bytesLeftInChunk);
-							bytesLeftInFile -= bytesLeftInChunk;
-							bytesLeftInChunk = 0;
-							continue;
-						}
-
-						if (nullTerminatedStrLen <= 1) {
-							f.skip(nullTerminatedStrLen);
-							bytesLeftInFile -= nullTerminatedStrLen;
-							bytesLeftInChunk -= nullTerminatedStrLen;
-							continue;
-						}
-
-						int actualStrLen = Math.min(257, nullTerminatedStrLen) - 1;
-
-						switch (metadataId) {
-						case 0x494e414d: // INAM
-							hasData = true;
-							title = readInfoStr(f, actualStrLen);
-							break;
-						case 0x49505244: // IPRD
-							hasData = true;
-							album = readInfoStr(f, actualStrLen);
-							break;
-						case 0x49415254: // IART
-							hasData = true;
-							artist = readInfoStr(f, actualStrLen);
-							break;
-						case 0x49435244: // ICRD
-							hasData = true;
-							year = readInfoStr(f, actualStrLen);
-							break;
-						case 0x4954524b: // ITRK
-							hasData = true;
-							track = readInfoStr(f, actualStrLen);
-							break;
-						default:
-							actualStrLen = 0;
-							break;
-						}
-
-						f.skip(nullTerminatedStrLen - actualStrLen);
-						bytesLeftInFile -= nullTerminatedStrLen;
-						bytesLeftInChunk -= nullTerminatedStrLen;
-					}
-					break;
-				}
-
-				if (subChunkLength > 0) {
-					f.skip(subChunkLength);
-					bytesLeftInFile -= subChunkLength;
-					bytesLeftInChunk -= subChunkLength;
-				}
+			if (bytesLeftInChunk > 0) {
+				f.skip(bytesLeftInChunk);
+				bytesLeftInFile -= bytesLeftInChunk;
 			}
+
+			bytesLeftInFile = skipRIFFPadding(f, chunkLength, bytesLeftInFile);
 		}
 
 		if (fmtOk && dataOk) {
@@ -307,47 +356,28 @@ public final class MetadataExtractor {
 		return false;
 	}
 
-	private String finishReadingV2Frame(int encoding, int frameSize) throws IOException {
-		byte[] tmp = tmpPtr[0];
-		int offsetStart = 0, offsetEnd = frameSize - 1;
-		TrimStart:
-		while (frameSize > 0) {
-			switch (tmp[offsetStart]) {
-			case 0x00:
-			case 0x09:
-			case 0x0A:
-			case 0x0B:
-			case 0x0C:
-			case 0x0D:
-			case 0x20:
-			case (byte)0x85:
-			case (byte)0xA0:
-				frameSize--;
-				offsetStart++;
-				break;
-			default:
-				break TrimStart;
-			}
+	private static boolean isTrimmable(char c) {
+		switch (c) {
+		case 0x0000:
+		case 0x0009:
+		case 0x000A:
+		case 0x000B:
+		case 0x000C:
+		case 0x000D:
+		case 0x0020:
+		case 0x0085:
+		case 0x00A0:
+		case 0xFEFF: //BOM
+			return true;
+		default:
+			return false;
 		}
-		TrimEnd:
-		while (frameSize > 0) {
-			switch (tmp[offsetEnd]) {
-			case 0x00:
-			case 0x09:
-			case 0x0A:
-			case 0x0B:
-			case 0x0C:
-			case 0x0D:
-			case 0x20:
-			case (byte)0x85:
-			case (byte)0xA0:
-				frameSize--;
-				offsetEnd--;
-				break;
-			default:
-				break TrimEnd;
-			}
-		}
+	}
+
+	private String finishReadingV2Frame(int encoding, int frameSize, boolean multipleValues) throws IOException {
+		if (frameSize <= 0)
+			return null;
+		final byte[] tmp = tmpPtr[0];
 		//according to http://developer.android.com/reference/java/nio/charset/Charset.html
 		//the following charsets are ALWAYS available:
 		//ISO-8859-1
@@ -356,30 +386,86 @@ public final class MetadataExtractor {
 		//UTF-16BE
 		//UTF-16LE
 		//UTF-8
-		String ret = null;
+		final String str;
 		switch (encoding) {
 		case 0: //ISO-8859-1
-			ret = new String(tmp, offsetStart, frameSize, "ISO-8859-1");
+			str = new String(tmp, 0, frameSize, "ISO-8859-1");
 			break;
 		case 1: //UCS-2 (UTF-16 encoded Unicode with BOM), in ID3v2.2 and ID3v2.3
+			str = new String(tmp, 0, frameSize & ~1, "UTF-16");
+			break;
 		case 2: //UTF-16BE encoded Unicode without BOM, in ID3v2.4
-			//restore the extra 0 removed from the end
-			if ((frameSize & 1) != 0 && (offsetStart + frameSize) < tmp.length)
-				frameSize++;
-			ret = new String(tmp, offsetStart, frameSize, (encoding == 1 ? "UTF-16" : "UTF-16BE"));
+			str = new String(tmp, 0, frameSize & ~1, "UTF-16BE");
 			break;
-		case 3: //UTF-8 encoded Unicode, in ID3v2.4
-			//BOM
-			ret = ((tmp[0] == (byte)0xef && tmp[1] == (byte)0xbb && tmp[2] == (byte)0xbf) ?
-				new String(tmp, offsetStart + 3, frameSize - 3, "UTF-8") :
-				new String(tmp, offsetStart, frameSize, "UTF-8"));
+		case 3: //UTF-8 encoded Unicode, in ID3v2.4 (a possible BOM is trimmed below)
+			str = new String(tmp, 0, frameSize, "UTF-8");
 			break;
+		default:
+			return null;
 		}
-		return ((ret != null && ret.length() == 0) ? null : ret);
+		//only trim after decoding, because trimming the raw bytes breaks multi-byte characters
+		//(e.g., 0x85 and 0xA0 are also UTF-8 continuation bytes, and 0x00 is half of a UTF-16 unit)
+		final String trimmed = trim(str);
+		if (trimmed == null)
+			return null;
+		int nullIndex = trimmed.indexOf('\0');
+		if (nullIndex < 0)
+			return trimmed;
+		//in ID3v2.4, text frames may contain multiple values separated by 0x00, whereas in the
+		//other versions (and in RIFF INFO chunks), everything after the first 0x00 must be ignored
+		if (!multipleValues)
+			return trim(trimmed.substring(0, nullIndex));
+		final StringBuilder builder = new StringBuilder(trimmed.length() + 8);
+		int start = 0;
+		while (start <= trimmed.length()) {
+			if ((nullIndex = trimmed.indexOf('\0', start)) < 0)
+				nullIndex = trimmed.length();
+			//each value is trimmed individually (in UTF-16, each value may even have its own BOM)
+			final String value = trim(trimmed.substring(start, nullIndex));
+			if (value != null) {
+				if (builder.length() > 0)
+					builder.append(", ");
+				builder.append(value);
+			}
+			start = nullIndex + 1;
+		}
+		return ((builder.length() == 0) ? null : builder.toString());
+	}
+
+	//returns null if nothing is left after trimming
+	private static String trim(String str) {
+		int start = 0, end = str.length();
+		while (start < end && isTrimmable(str.charAt(start)))
+			start++;
+		while (end > start && isTrimmable(str.charAt(end - 1)))
+			end--;
+		return ((start == end) ? null : str.substring(start, end));
+	}
+
+	//ID3v1 fields are terminated by a 0x00 byte (unless they occupy the entire field), but they
+	//are also frequently padded with spaces
+	private static String readID3v1Field(byte[] tmp, int offset, int maxLength) throws IOException {
+		int length = 0;
+		while (length < maxLength && tmp[offset + length] != 0)
+			length++;
+		return trim(new String(tmp, offset, length, "ISO-8859-1"));
+	}
+
+	//removes the 0x00 bytes inserted after every 0xFF byte by the unsynchronisation scheme
+	//(returns the new length of the data)
+	private static int removeUnsynchronisation(byte[] buffer, int length) {
+		int dst = 0;
+		for (int src = 0; src < length; src++) {
+			final byte b = buffer[src];
+			buffer[dst++] = b;
+			if (b == (byte)0xff && (src + 1) < length && buffer[src + 1] == 0)
+				src++;
+		}
+		return dst;
 	}
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
-	private String readV2Frame(PrimitiveBufferedInputStream f, int frameSize) throws IOException {
+	private String readV2Frame(PrimitiveBufferedInputStream f, int frameSize, boolean unsynchronised, boolean multipleValues) throws IOException {
 		if (frameSize < 2) {
 			f.skip(frameSize);
 			return null;
@@ -396,7 +482,10 @@ public final class MetadataExtractor {
 			tmpPtr[0] = tmp;
 		}
 		frameSize = f.read(tmp, 0, frameSize);
-		return finishReadingV2Frame(encoding, frameSize);
+		//the encoding byte is never 0xFF, so there is no 0x00 to be removed right after it
+		if (unsynchronised && frameSize > 0)
+			frameSize = removeUnsynchronisation(tmp, frameSize);
+		return finishReadingV2Frame(encoding, frameSize, multipleValues);
 	}
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
@@ -422,54 +511,22 @@ public final class MetadataExtractor {
 			//	unsigned char track; //The number of the track on the album, or 0. Invalid, if previous byte is not a binary 0.
 			//	unsigned char genre; //Index in a list of genres, or 255
 			//} tag;
-			int i, c;
-			if ((found & TITLE_B) == 0) {
-				i = 3;
-				c = 0;
-				while (c < 30 && tmp[i] != 0) {
-					c++;
-					i++;
-				}
-				if (c != 0) {
-					title = new String(tmp, 3, c, "ISO-8859-1");
-					hasData = true;
-				}
+			String field;
+			if ((found & TITLE_B) == 0 && (field = readID3v1Field(tmp, 3, 30)) != null) {
+				title = field;
+				hasData = true;
 			}
-			if ((found & ARTIST_B) == 0) {
-				i = 3 + 30;
-				c = 0;
-				while (c < 30 && tmp[i] != 0) {
-					c++;
-					i++;
-				}
-				if (c != 0) {
-					artist = new String(tmp, 3 + 30, c, "ISO-8859-1");
-					hasData = true;
-				}
+			if ((found & ARTIST_B) == 0 && (field = readID3v1Field(tmp, 3 + 30, 30)) != null) {
+				artist = field;
+				hasData = true;
 			}
-			if ((found & ALBUM_B) == 0) {
-				i = 3 + 30 + 30;
-				c = 0;
-				while (c < 30 && tmp[i] != 0) {
-					c++;
-					i++;
-				}
-				if (c != 0) {
-					album = new String(tmp, 3 + 30 + 30, c, "ISO-8859-1");
-					hasData = true;
-				}
+			if ((found & ALBUM_B) == 0 && (field = readID3v1Field(tmp, 3 + 30 + 30, 30)) != null) {
+				album = field;
+				hasData = true;
 			}
-			if ((found & YEAR_B) == 0) {
-				i = 3 + 30 + 30 + 30;
-				c = 0;
-				while (c < 4 && tmp[i] != 0) {
-					c++;
-					i++;
-				}
-				if (c != 0) {
-					year = new String(tmp, 3 + 30 + 30 + 30, c, "ISO-8859-1");
-					hasData = true;
-				}
+			if ((found & YEAR_B) == 0 && (field = readID3v1Field(tmp, 3 + 30 + 30 + 30, 4)) != null) {
+				year = field;
+				hasData = true;
 			}
 			if ((found & TRACK_B) == 0 && tmp[128 - 3] == 0 && tmp[128 - 2] != 0) {
 				track = Integer.toString((int)tmp[128 - 2] & 0xff);
@@ -582,6 +639,15 @@ public final class MetadataExtractor {
 					break;
 				}
 
+				// With HE-AAC (SBR), the ADTS header contains the sample rate of the core AAC
+				// stream, which is half of the actual output sample rate. Unfortunately, SBR can
+				// only be reliably detected by decoding the audio data, so we just assume that low
+				// sample rates mean HE-AAC (this is the case for nearly all music encoded at such
+				// rates, but genuine low sample rate AAC-LC files will be reported incorrectly)
+				final boolean assumedHEAAC = (sampleRate <= 24000);
+				if (assumedHEAAC)
+					sampleRate <<= 1;
+
 				final int channelIndex = (hdr >> 6) & 7;
 
 				switch (channelIndex) {
@@ -595,6 +661,15 @@ public final class MetadataExtractor {
 					channels = channelIndex;
 					break;
 				}
+
+				// With HE-AAC v2 (SBR + PS), the ADTS header contains the channel configuration of
+				// the core AAC stream, which is mono, whereas the actual output is stereo, as
+				// Parametric Stereo is used to rebuild the stereo image. Just as SBR, PS can only be
+				// reliably detected by decoding the audio data, so we just assume that mono streams
+				// that we already assumed to be HE-AAC are, actually, HE-AAC v2 (genuine mono HE-AAC
+				// files will be reported incorrectly)
+				if (assumedHEAAC && channels == 1)
+					channels = 2;
 			} else {
 				// http://www.mp3-tech.org/programmer/frame_header.html
 				//
@@ -687,6 +762,14 @@ public final class MetadataExtractor {
 		}
 	}
 
+	//synchsafe integers only use the 7 least significant bits of each byte
+	static int decodeSynchsafe(int value) {
+		return (value & 0x7f) |
+			((value >> 1) & 0x3f80) |
+			((value >> 2) & 0x1fc000) |
+			((value >> 3) & 0xfe00000);
+	}
+
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	private void extractID3v2Andv1(PrimitiveBufferedInputStream f, FileInputStream fileInputStream, boolean aac, boolean fetchSampleRateAndChannels) throws IOException  {
 		//struct _ID3v2TagHdr {
@@ -715,8 +798,8 @@ public final class MetadataExtractor {
 				return;
 			}
 		}
-		final int hdrRevLo = f.read();
-		final int hdrRevHi = f.read();
+		final int majorVersion = f.read();
+		f.read(); //ignore the revision as it does not affect the layout of the tag
 		final int flags = f.read();
 		final int sizeBytes0 = f.read();
 		final int sizeBytes1 = f.read();
@@ -732,100 +815,212 @@ public final class MetadataExtractor {
 
 		final int id3TotalLength = 10 + size;
 
-		if ((hdrRevLo & 0xff) > 2 || hdrRevHi != 0) { //only rev 3 or greater supported
-			//http://id3.org/id3v2.3.0
-			//http://id3.org/id3v2.4.0-structure
-			//http://id3.org/id3v2.4.0-frames
-			while (size > 0 && found != ALL_B) {
+		//in ID3v2.2, flag 0x40 means the whole tag is compressed, but in ID3v2.3 and ID3v2.4,
+		//it indicates the presence of an extended header
+		if (majorVersion >= 2 && majorVersion <= 4 && (majorVersion != 2 || (flags & 0x40) == 0)) {
+			//in ID3v2.2 and ID3v2.3, flag 0x80 means the unsynchronisation scheme has been applied to
+			//the entire tag (frame headers included), whereas in ID3v2.4, it is applied to the data
+			//of each frame individually (in which case, it is handled by extractID3v2Frames())
+			if ((flags & 0x80) != 0 && majorVersion != 4)
+				found = extractID3v2Frames(new PrimitiveBufferedInputStream(new UnsynchronisedInputStream(f, size), 4096, size), majorVersion, flags, size, found);
+			else
+				found = extractID3v2Frames(f, majorVersion, flags, size, found);
+		}
+
+		hasData |= (found != 0);
+
+		//even when the ID3v2 tag is not supported, the audio data and a possible ID3v1 tag still are
+		if (fetchSampleRateAndChannels)
+			extractSampleRateAndChannels(f, id3TotalLength, aac);
+
+		//try to extract ID3v1 only if there are any blank fields
+		if ((found & ALL_BUT_LENGTH_B) != ALL_BUT_LENGTH_B && fileInputStream != null)
+			extractID3v1(fileInputStream, found);
+	}
+
+	@SuppressWarnings("ResultOfMethodCallIgnored")
+	private int extractID3v2Frames(PrimitiveBufferedInputStream f, int majorVersion, int flags, int size, int found) throws IOException {
+		//http://id3.org/id3v2-00
+		//http://id3.org/id3v2.3.0
+		//http://id3.org/id3v2.4.0-structure
+		//http://id3.org/id3v2.4.0-frames
+		final boolean v22 = (majorVersion == 2);
+		final boolean v24 = (majorVersion == 4);
+		final boolean allFramesUnsynchronised = (v24 && (flags & 0x80) != 0);
+		final int frameHeaderSize = (v22 ? 6 : 10);
+		if (!v22 && (flags & 0x40) != 0) {
+			//skip the extended header: in ID3v2.3, its size is a regular integer that does not
+			//include the 4 bytes of the size itself, whereas in ID3v2.4, its size is a synchsafe
+			//integer that includes the entire extended header
+			int extendedHeaderSize = f.readUInt32BE();
+			if (v24)
+				extendedHeaderSize = (((extendedHeaderSize & 0x80808080) != 0) ? -1 : (decodeSynchsafe(extendedHeaderSize) - 4));
+			if (extendedHeaderSize < 0 || (4 + extendedHeaderSize) > size)
+				return found; //invalid extended header, so do not even try to read the frames
+			f.skip(extendedHeaderSize);
+			size -= (4 + extendedHeaderSize);
+		}
+		while (size > 0 && found != ALL_B) {
+			int frameId, frameSize, frameFlags = 0;
+			if (v22) {
+				//struct _ID3v22FrameHdr {
+				//public:
+				//	unsigned char id[3];
+				//	unsigned char size[3];
+				//} frame;
+				frameId = (f.read() << 16) | (f.read() << 8) | f.read();
+				frameSize = (f.read() << 16) | (f.read() << 8) | f.read();
+				//map the frames we are interested in to their ID3v2.3 equivalents
+				switch (frameId) {
+				case 0x545432: //TT2
+					frameId = 0x54495432; //TIT2
+					break;
+				case 0x545031: //TP1
+					frameId = 0x54504531; //TPE1
+					break;
+				case 0x54414c: //TAL
+					frameId = 0x54414c42; //TALB
+					break;
+				case 0x54524b: //TRK
+					frameId = 0x5452434b; //TRCK
+					break;
+				case 0x545945: //TYE
+					frameId = 0x54594552; //TYER
+					break;
+				case 0x544c45: //TLE
+					frameId = 0x544c454e; //TLEN
+					break;
+				}
+			} else {
 				//struct _ID3v2FrameHdr {
 				//public:
 				//	unsigned int id;
 				//	unsigned int size;
 				//	unsigned short flags;
 				//} frame;
-				final int frameId = f.readUInt32BE();
-				final int frameSize = f.readUInt32BE();
-				//skip the flags
-				f.skip(2);
-				if (frameId == 0 || frameSize <= 0 || frameSize > size)
-					break;
-				switch (frameId) {
-				case 0x54495432: //title - TIT2
-					if ((found & TITLE_B) == 0) {
-						if ((title = readV2Frame(f, frameSize)) != null)
-							found |= TITLE_B;
-					} else {
-						f.skip(frameSize);
-					}
-					break;
-				case 0x54504531: //artist - TPE1
-					if ((found & ARTIST_B) == 0) {
-						if ((artist = readV2Frame(f, frameSize)) != null)
-							found |= ARTIST_B;
-					} else {
-						f.skip(frameSize);
-					}
-					break;
-				case 0x54414c42: //album - TALB
-					if ((found & ALBUM_B) == 0) {
-						if ((album = readV2Frame(f, frameSize)) != null)
-							found |= ALBUM_B;
-					} else {
-						f.skip(frameSize);
-					}
-					break;
-				case 0x5452434b: //track - TRCK
-					if ((found & TRACK_B) == 0) {
-						if ((track = readV2Frame(f, frameSize)) != null)
-							found |= TRACK_B;
-					} else {
-						f.skip(frameSize);
-					}
-					break;
-				case 0x54594552: //year - TYER
-					if ((found & YEAR_B) == 0) {
-						if ((year = readV2Frame(f, frameSize)) != null)
-							found |= YEAR_B;
-					} else {
-						f.skip(frameSize);
-					}
-					break;
-				case 0x54445243: //Recording time - TDRC
-					if ((found & YEAR_B) == 0) {
-						if ((year = readV2Frame(f, frameSize)) != null) {
-							if (year.length() > 4)
-								year = year.substring(0, 4);
-							found |= YEAR_B;
-						}
-					} else {
-						f.skip(frameSize);
-					}
-					break;
-				case 0x544c454e: //length - TLEN
-					if ((found & LENGTH_B) == 0) {
-						if ((length = readV2Frame(f, frameSize)) != null)
-							found |= LENGTH_B;
-					} else {
-						f.skip(frameSize);
-					}
-					break;
-				default:
-					f.skip(frameSize);
-					break;
-				}
-				size -= (10 + frameSize);
+				frameId = f.readUInt32BE();
+				frameSize = f.readUInt32BE();
+				//in ID3v2.4, frame sizes are synchsafe integers (7 bits per byte), but a few taggers
+				//(e.g., old versions of iTunes) wrote regular integers instead, which can only be
+				//detected when the most significant bit of any of the bytes is set
+				if (v24 && (frameSize & 0x80808080) == 0)
+					frameSize = decodeSynchsafe(frameSize);
+				frameFlags = f.readUInt16BE();
 			}
-			//try to extract ID3v1 only if there are any blank fields
-			hasData |= (found != 0);
+			if (frameId == 0 || frameSize <= 0 || frameSize > size)
+				break;
 
-			if (fetchSampleRateAndChannels)
-				extractSampleRateAndChannels(f, id3TotalLength, aac);
+			size -= (frameHeaderSize + frameSize);
 
-			if ((found & ALL_BUT_LENGTH_B) != ALL_BUT_LENGTH_B && fileInputStream != null)
-				extractID3v1(fileInputStream, found);
+			boolean frameUnsynchronised = false;
+			if (v24) {
+				//https://id3.org/id3v2.4.0-structure (4.1.2. Frame header flags)
+				if ((frameFlags & 0x0c) != 0) {
+					//compressed (0x08) or encrypted (0x04) frames are not supported
+					f.skip(frameSize);
+					continue;
+				}
+				//extra bytes added before the actual frame data
+				int extraBytes = 0;
+				if ((frameFlags & 0x40) != 0) //grouping identity
+					extraBytes++;
+				if ((frameFlags & 0x01) != 0) //data length indicator
+					extraBytes += 4;
+				if (extraBytes > 0) {
+					if (extraBytes >= frameSize) {
+						f.skip(frameSize);
+						continue;
+					}
+					f.skip(extraBytes);
+					frameSize -= extraBytes;
+				}
+				frameUnsynchronised = (allFramesUnsynchronised || (frameFlags & 0x02) != 0);
+			} else if (!v22) {
+				//https://id3.org/id3v2.3.0 (3.3.1. Frame header flags)
+				if ((frameFlags & 0xc0) != 0) {
+					//compressed (0x80) or encrypted (0x40) frames are not supported
+					f.skip(frameSize);
+					continue;
+				}
+				if ((frameFlags & 0x20) != 0) {
+					//grouping identity (an extra byte added before the actual frame data)
+					f.skip(1);
+					frameSize--;
+				}
+			}
+
+			switch (frameId) {
+			case 0x54495432: //title - TIT2
+				if ((found & TITLE_B) == 0) {
+					if ((title = readV2Frame(f, frameSize, frameUnsynchronised, v24)) != null)
+						found |= TITLE_B;
+				} else {
+					f.skip(frameSize);
+				}
+				break;
+			case 0x54504531: //artist - TPE1
+				if ((found & ARTIST_B) == 0) {
+					if ((artist = readV2Frame(f, frameSize, frameUnsynchronised, v24)) != null)
+						found |= ARTIST_B;
+				} else {
+					f.skip(frameSize);
+				}
+				break;
+			case 0x54414c42: //album - TALB
+				if ((found & ALBUM_B) == 0) {
+					if ((album = readV2Frame(f, frameSize, frameUnsynchronised, v24)) != null)
+						found |= ALBUM_B;
+				} else {
+					f.skip(frameSize);
+				}
+				break;
+			case 0x5452434b: //track - TRCK
+				if ((found & TRACK_B) == 0) {
+					if ((track = readV2Frame(f, frameSize, frameUnsynchronised, v24)) != null)
+						found |= TRACK_B;
+				} else {
+					f.skip(frameSize);
+				}
+				break;
+			case 0x54594552: //year - TYER
+			case 0x54445243: //Recording time - TDRC (normalized later by normalizeTrackAndYear())
+				if ((found & YEAR_B) == 0) {
+					if ((year = readV2Frame(f, frameSize, frameUnsynchronised, v24)) != null)
+						found |= YEAR_B;
+				} else {
+					f.skip(frameSize);
+				}
+				break;
+			case 0x544c454e: //length - TLEN
+				if ((found & LENGTH_B) == 0) {
+					if ((length = readV2Frame(f, frameSize, frameUnsynchronised, v24)) != null)
+						found |= LENGTH_B;
+				} else {
+					f.skip(frameSize);
+				}
+				break;
+			default:
+				f.skip(frameSize);
+				break;
+			}
 		}
+		return found;
 	}
-	
+
+	private void normalizeTrackAndYear() {
+		//track numbers are frequently stored as "track/total" (e.g., "3/12"), and dates are
+		//frequently stored as "yyyy-MM-dd", but only the leading integers are used
+		if (track != null) {
+			final int slash = track.indexOf('/');
+			if (slash >= 0)
+				track = track.substring(0, slash).trim();
+			if (track.length() == 0)
+				track = null;
+		}
+		if (year != null && year.length() > 4)
+			year = year.substring(0, 4);
+	}
+
 	public void extract(FileSt file) {
 		hasData = false;
 		title = null;
@@ -855,6 +1050,7 @@ public final class MetadataExtractor {
 				OggMetadataExtractor.extract(this, (OggPrimitiveBufferedInputStream)bufferedInputStream, tmpPtr);
 			else
 				extractID3v2Andv1(bufferedInputStream, fileInputStream, aac, true);
+			normalizeTrackAndYear();
 		} catch (Throwable ex) {
 			hasData = false;
 			ex.printStackTrace();
@@ -888,6 +1084,7 @@ public final class MetadataExtractor {
 		try {
 			bufferedInputStream = new PrimitiveBufferedInputStream(inputStream, 32768, totalLength);
 			extractID3v2Andv1(bufferedInputStream, null, false, false);
+			normalizeTrackAndYear();
 		} catch (Throwable ex) {
 			hasData = false;
 			ex.printStackTrace();

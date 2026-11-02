@@ -46,7 +46,9 @@ public class OggPrimitiveBufferedInputStream extends PrimitiveBufferedInputStrea
 	// (Vorbis) Identifier = 6 bytes "vorbis"
 	private static final int VORBIS_IDENTIFIER_LENGTH = 1 + 6;
 
-	private int currentPageLength;
+	private static final int HEADER_TYPE_BOS = 0x02; // Beginning of stream
+
+	private int currentPageLength, lastPageHeaderType;
 
 	public OggPrimitiveBufferedInputStream(InputStream in, int size, int totalLength) {
 		super(in, size, totalLength);
@@ -59,12 +61,19 @@ public class OggPrimitiveBufferedInputStream extends PrimitiveBufferedInputStrea
 			return -1;
 
 		// Version (8 bits)
+		super.skip(1);
+
 		// Header type (8 bits)
+		final int headerType = super.read();
+		if (headerType == -1)
+			return -1;
+		lastPageHeaderType = headerType;
+
 		// Granule position (64 bits)
 		// Bitstream serial number (32 bits)
 		// Page sequence number (32 bits)
 		// Checksum (32 bits)
-		super.skip(22);
+		super.skip(20);
 
 		// Page segments (8 bits)
 		int pageSegments = super.read();
@@ -84,11 +93,21 @@ public class OggPrimitiveBufferedInputStream extends PrimitiveBufferedInputStrea
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	public boolean findInitialVorbisCommentPage(MetadataExtractor metadata) throws IOException {
+		boolean vorbisIdentificationFound = false;
+
 		for (; ; ) {
 			// Read one Ogg page + enough data to try to figure out its vorbis type
 
 			final int pageLength = readPageLength();
 			if (pageLength < 0)
+				return false;
+
+			// https://xiph.org/ogg/doc/framing.html
+			// The BOS pages of all logical streams must come before any other page. Therefore, if
+			// a non-BOS page is found before a Vorbis identification header, this is not a Vorbis
+			// file (e.g., Opus or FLAC inside an Ogg container), and there is no point in reading
+			// the rest of the file.
+			if (!vorbisIdentificationFound && (lastPageHeaderType & HEADER_TYPE_BOS) == 0)
 				return false;
 
 			if (pageLength == 0)
@@ -135,6 +154,8 @@ public class OggPrimitiveBufferedInputStream extends PrimitiveBufferedInputStrea
 
 						metadata.channels = channels;
 						metadata.sampleRate = sampleRate;
+
+						vorbisIdentificationFound = true;
 
 						currentPageLength = pageLength - 16;
 

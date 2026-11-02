@@ -41,7 +41,20 @@ final class FLACMetadataExtractor extends VorbisCommentExtractor {
 	private static int readHeaderAndStreamInfo(MetadataExtractor metadata, PrimitiveBufferedInputStream f, byte[] tmp) throws IOException {
 		// https://xiph.org/flac/format.html#stream
 
-		if (f.readUInt32BE() != 0x664c6143) // fLaC
+		int hdr = f.readUInt32BE();
+		if ((hdr >>> 8) == 0x494433) { // ID3
+			// The format does not allow it, but a few taggers prepend an ID3v2 tag to FLAC files
+			// (the tag is just skipped, as the actual metadata is in the VORBIS_COMMENT block)
+			f.read(); // revision (the major version was the last byte of hdr)
+			final int flags = f.read();
+			final int size = f.readUInt32BE();
+			if (flags == -1 || (size & 0x80808080) != 0) // a synchsafe size never has these bits set
+				return 0;
+			f.skip(MetadataExtractor.decodeSynchsafe(size) + ((flags & 0x10) != 0 ? 10 : 0)); // footer presence flag
+			hdr = f.readUInt32BE();
+		}
+
+		if (hdr != 0x664c6143) // fLaC
 			return 0;
 
 		int typeAndLength = f.readUInt32BE();
