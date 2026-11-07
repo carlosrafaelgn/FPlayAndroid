@@ -62,6 +62,9 @@ public final class Song extends BaseItem {
 	private static final int STORE_OK = 2;
 	public String path; //the only thread/method allowed to change the path is Player._httpStreamReceiverUrlUpdated()
 	public boolean isHttp;
+	//true when the http path comes from a url typed by the user, and false when it comes
+	//from an actual radio station (either SHOUTcast or Community Radio Station Index)
+	public boolean isUserHttp;
 	public String title, artist, album, extraInfo;
 	public int track, lengthMS, year, sampleRate, channels;
 	public String length;
@@ -76,6 +79,7 @@ public final class Song extends BaseItem {
 	public Song(String path, String title, String artist, String album, int track, int lengthMS, int year, int sampleRate, int channels) {
 		this.path = path;
 		this.isHttp = isPathHttp(path);
+		this.isUserHttp = (this.isHttp && !RadioStation.isRadioUrl(path));
 		this.title = title;
 		this.artist = artist;
 		this.album = album;
@@ -90,6 +94,7 @@ public final class Song extends BaseItem {
 	public Song(SongInfo songInfo) {
 		this.path = songInfo.path;
 		this.isHttp = isPathHttp(path);
+		this.isUserHttp = (this.isHttp && !RadioStation.isRadioUrl(path));
 		this.title = songInfo.title;
 		this.artist = songInfo.artist;
 		if (isHttp) {
@@ -111,6 +116,7 @@ public final class Song extends BaseItem {
 	public Song(String url, String title) {
 		this.path = url.trim();
 		this.isHttp = true;
+		this.isUserHttp = !RadioStation.isRadioUrl(path);
 		this.title = Normalizer.normalize(title, Normalizer.Form.NFC).trim();
 		this.artist = this.title;
 		validateFields(null);
@@ -119,6 +125,7 @@ public final class Song extends BaseItem {
 	public Song(FileSt fileSt, MetadataExtractor metadataExtractor) {
 		this.path = fileSt.path;
 		this.isHttp = false;
+		this.isUserHttp = false;
 		
 		//MediaMetadataRetriever simply returns null for all keys, except METADATA_KEY_DURATION,
 		//on several devices, even though the file has the metadata... :(

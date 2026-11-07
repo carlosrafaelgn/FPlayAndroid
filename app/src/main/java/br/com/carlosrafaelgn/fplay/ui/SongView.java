@@ -343,12 +343,23 @@ public final class SongView extends View implements View.OnClickListener, View.O
 		rect.right -= rightMarginForDrawing;
 		UI.drawBgListItem(rect, canvas, state);
 		if (UI.albumArtSongList) {
-			if (albumArt != null && albumArt.bitmap != null)
+			if (albumArt != null && albumArt.bitmap != null) {
 				canvas.drawBitmap(albumArt.bitmap, bitmapLeftPadding, topMargin + ((albumArtHeight - albumArt.height) >> 1), null);
-			//else if (song.isHttp)
+			//} else if (song.isHttp) {
 			//	TextIconDrawable.drawIcon(canvas, UI.ICON_RADIO, iconLeftPadding, topMargin + ((albumArtHeight - UI.defaultControlContentsSize) >> 1), UI.defaultControlContentsSize, ((state & ~UI.STATE_CURRENT) != 0) ? UI.color_text_selected : UI.color_text_listitem_secondary);
-			else if (!pendingAlbumArtRequest)
-				CoverDrawable.drawCover(canvas, song.album == null || song.album.length() <= 1 ? song.title : song.album, leftMargin, topMargin, albumArtHeight);
+			} else if (!pendingAlbumArtRequest) {
+				//let's try to use artist for radio stations first, because it usually does not
+				//change as often as the album, which holds the song's path
+				String name;
+				if (song.isHttp && !song.isUserHttp) {
+					name = song.artist;
+					if (name == null || name.length() <= 1)
+						name = song.album;
+				} else {
+					name = song.album;
+				}
+				CoverDrawable.drawCover(canvas, name == null || name.length() <= 1 ? song.title : name, leftMargin, topMargin, albumArtHeight);
+			}
 		}
 		if ((state & UI.STATE_CURRENT) != 0)
 			TextIconDrawable.drawIcon(canvas, UI.ICON_FPLAY, currentX, currentY, UI.defaultControlContentsSize, ((state & ~UI.STATE_CURRENT) == 0) ? UI.color_text_listitem_secondary : UI.color_text_selected);
