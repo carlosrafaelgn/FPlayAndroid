@@ -436,7 +436,9 @@ public final class ActivityVisualizer extends Activity implements br.com.carlosr
 			//else
 			//	getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		}
-		getWindow().setNavigationBarColor(UI.color_visualizer565);
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+			getWindow().setNavigationBarColor(UI.color_visualizer565);
 
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 			prepareSystemUIObserver();
