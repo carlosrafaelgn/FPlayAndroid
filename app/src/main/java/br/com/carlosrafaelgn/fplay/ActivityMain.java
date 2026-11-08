@@ -331,18 +331,6 @@ public final class ActivityMain extends ClientActivity implements Timer.TimerHan
 			stringBuilder.append(song.length);
 		}
 
-		if (song == Player.localSong) {
-			//this information is only available for the song currently being played
-			final int sampleRate = Player.getSrcSampleRate();
-			final int channelCount = Player.getChannelCount();
-			if (sampleRate > 0 && channelCount > 0) {
-				stringBuilder.append("\n\n");
-				stringBuilder.append(sampleRate);
-				stringBuilder.append(" Hz / ");
-				stringBuilder.append((channelCount == 1) ? "Mono" : "Stereo");
-			}
-		}
-
 		final LinearLayout l = (LinearLayout)UI.createDialogView(getHostActivity(), null);
 		final String str = stringBuilder.toString();
 		final BgEditText editText = UI.createDialogEditText(getHostActivity(), 0,
