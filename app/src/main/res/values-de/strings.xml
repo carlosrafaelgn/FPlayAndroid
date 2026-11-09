@@ -255,6 +255,7 @@
     <string name="search_term">Suchbegriff</string>
     <string name="country">Land</string>
     <string name="all_countries">Alle Länder</string>
+    <string name="no_country">Kein Land</string>
     <string name="tags">Schlagworte</string>
     <string name="tags_comma_separated">Schlagworte (durch Kommas getrennt)</string>
     <string name="no_description">Keine Beschreibung :(</string>

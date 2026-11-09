@@ -255,6 +255,7 @@
     <string name="search_term">Критерии поиска</string>
     <string name="country">Страна</string>
     <string name="all_countries">Все страны</string>
+    <string name="no_country">Без страны</string>
     <string name="tags">Теги</string>
     <string name="tags_comma_separated">Теги (через запятую)</string>
     <string name="no_description">Нет описания :(</string>

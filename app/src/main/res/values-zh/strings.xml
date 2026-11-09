@@ -262,6 +262,7 @@
 	<string name="search_term">搜索条目</string>
 	<string name="country">国家</string>
 	<string name="all_countries">所有国家</string>
+	<string name="no_country">没有国家</string>
 	<string name="tags">标签</string>
 	<string name="tags_comma_separated">标签（用逗号分隔）</string>
 	<string name="no_description">无描述 :(</string>

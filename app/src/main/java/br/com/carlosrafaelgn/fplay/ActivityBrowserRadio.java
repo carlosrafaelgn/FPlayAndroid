@@ -672,7 +672,7 @@ public final class ActivityBrowserRadio extends ClientActivity implements View.O
 	
 	@Override
 	protected void onCreate() {
-		radioStationList = (useShoutcast ? new ShoutcastRadioStationList(getText(R.string.tags).toString(), getText(R.string.listeners).toString(), "-", UI.emoji(getText(R.string.no_description).toString())) : new CommunityRadioStationIndexList(getText(R.string.tags).toString(), "-", UI.emoji(getText(R.string.no_description).toString()), getText(R.string.no_tags).toString()));
+		radioStationList = (useShoutcast ? new ShoutcastRadioStationList(getText(R.string.tags).toString(), getText(R.string.listeners).toString(), "-", UI.emoji(getText(R.string.no_description).toString())) : new CommunityRadioStationIndexList(getText(R.string.tags).toString(), getText(R.string.no_country).toString(), UI.emoji(getText(R.string.no_description).toString()), getText(R.string.no_tags).toString()));
 		radioStationList.setItemClickListener(this);
 		radioStationList.setActionListener(this);
 		radioStationList.setSelectionChangedListener(this);
