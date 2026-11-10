@@ -1841,6 +1841,8 @@ public final class UI implements Animation.AnimationListener, Interpolator {
 			context.getText(R.string.check_it_out).toString();*/
 		final String content = //"- " + context.getText(R.string.ringtone) +
 			//"\n\n" +
+			"- " + context.getText(R.string.add_songs) + collon() + "Community Radio Station Index" +
+			"\n\n" +
 			context.getText(R.string.there_are_new_features) +
 			((Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ? ("\n\n- " + context.getText(R.string.bluetooth) + collon() + context.getText(R.string.opt_bluetooth_connect)) : "") +
 			//((Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ? ("\n\n- " + context.getText(R.string.msg_turn_off_title) + collon() + context.getText(R.string.opt_read_phone_state)) : "") +
